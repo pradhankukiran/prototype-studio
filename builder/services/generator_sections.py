@@ -512,7 +512,7 @@ def section_helpers() -> str:
 
         """)  # noqa: W291 — trailing space is intentional for the join
         + "def render_screen_header(title: str, description: str, eyebrow: str, badges: list[str] | None = None) -> None:\n"
-        "    badge_html = \"\".join(\n"
+        '    badge_html = "".join(\n'
         "        f'<span class=\"hero-badge\">{badge}</span>' for badge in (badges or [])\n"
         "    )\n"
         "    st.markdown(\n"
@@ -520,11 +520,11 @@ def section_helpers() -> str:
         '        <section class="hero-header">\n'
         '            <div class="hero-copy">\n'
         '                <p class="hero-eyebrow">{eyebrow}</p>\n'
-        '                <h1>{title}</h1>\n'
-        '                <p>{description}</p>\n'
-        '            </div>\n'
+        "                <h1>{title}</h1>\n"
+        "                <p>{description}</p>\n"
+        "            </div>\n"
         '            <div class="hero-badge-row">{badge_html}</div>\n'
-        '        </section>\n'
+        "        </section>\n"
         f"        {TQ},\n"
         "        unsafe_allow_html=True,\n"
         "    )\n"
@@ -532,19 +532,19 @@ def section_helpers() -> str:
         "def render_workflow_strip() -> None:\n"
         '    if not SPEC["workflow_states"]:\n'
         "        return\n"
-        "    state_html = \"\".join(\n"
-        "        f'<span class=\"workflow-pill{\"\" if not state[\"is_terminal\"] else \" workflow-pill-terminal\"}{\"\" if not state[\"is_initial\"] else \" workflow-pill-start\"}\">{state[\"name\"]}</span>'\n"
+        '    state_html = "".join(\n'
+        '        f\'<span class="workflow-pill{"" if not state["is_terminal"] else " workflow-pill-terminal"}{"" if not state["is_initial"] else " workflow-pill-start"}">{state["name"]}</span>\'\n'
         '        for state in SPEC["workflow_states"]\n'
         "    )\n"
-        '    st.markdown(f\'<div class="workflow-strip">{state_html}</div>\', unsafe_allow_html=True)\n'
+        "    st.markdown(f'<div class=\"workflow-strip\">{state_html}</div>', unsafe_allow_html=True)\n"
         "\n\n"
         "def render_empty_state(title: str, description: str) -> None:\n"
         "    st.markdown(\n"
         f"        f{TQ}\n"
         '        <div class="empty-state-card">\n'
-        '            <h3>{title}</h3>\n'
-        '            <p>{description}</p>\n'
-        '        </div>\n'
+        "            <h3>{title}</h3>\n"
+        "            <p>{description}</p>\n"
+        "        </div>\n"
         f"        {TQ},\n"
         "        unsafe_allow_html=True,\n"
         "    )\n"
@@ -571,19 +571,19 @@ def section_helpers() -> str:
         "    display_fields = list_fields_for_entity(entity)[:2]\n"
         "    for column, row in zip(columns, preview_rows, strict=False):\n"
         "        payload = serialize_record(entity, row)\n"
-        "        list_html = \"\".join(\n"
-        "            f'<li><span>{field[\"label\"]}</span><strong>{format_display_value(payload.get(field[\"label\"]))}</strong></li>'\n"
+        '        list_html = "".join(\n'
+        '            f\'<li><span>{field["label"]}</span><strong>{format_display_value(payload.get(field["label"]))}</strong></li>\'\n'
         "            for field in display_fields\n"
         "        )\n"
-        "        state_badge = \"\"\n"
+        '        state_badge = ""\n'
         '        if "State" in payload:\n'
-        "            state_badge = f'<span class=\"hero-badge\">{payload[\"State\"]}</span>'\n"
+        '            state_badge = f\'<span class="hero-badge">{payload["State"]}</span>\'\n'
         "        with column:\n"
         "            st.markdown(\n"
         f"                f{TQ}\n"
         '                <div class="glance-card">\n'
         '                    <div class="glance-head">\n'
-        "                        <p>{entity[\"name\"]} #{row[\"id\"]}</p>\n"
+        '                        <p>{entity["name"]} #{row["id"]}</p>\n'
         "                        {state_badge}\n"
         "                    </div>\n"
         "                    <h3>{format_record_title(entity, row)}</h3>\n"
@@ -657,7 +657,7 @@ def section_helpers() -> str:
 
 
 def section_navigation(spec: dict, profile: dict) -> str:
-    nav_style = profile.get('nav_style', 'sidebar_radio')
+    nav_style = profile.get("nav_style", "sidebar_radio")
 
     sidebar_brand = (
         "def _render_sidebar_brand() -> None:\n"
@@ -682,16 +682,21 @@ def section_navigation(spec: dict, profile: dict) -> str:
         '        st.sidebar.caption(" -> ".join(state["name"] for state in SPEC["workflow_states"]))\n'
     )
 
-    if nav_style == 'sidebar_radio':
-        return sidebar_brand + textwrap.dedent("""
+    if nav_style == "sidebar_radio":
+        return (
+            sidebar_brand
+            + textwrap.dedent("""
         def render_navigation(available_screens: list[dict]) -> dict:
             _render_sidebar_brand()
             labels = [screen["title"] for screen in available_screens]
             selected_label = st.sidebar.radio("Navigation", labels, label_visibility="collapsed")
             return next(screen for screen in available_screens if screen["title"] == selected_label)""")
+        )
 
-    if nav_style == 'sidebar_pills':
-        return sidebar_brand + textwrap.dedent("""
+    if nav_style == "sidebar_pills":
+        return (
+            sidebar_brand
+            + textwrap.dedent("""
         def render_navigation(available_screens: list[dict]) -> dict:
             _render_sidebar_brand()
             labels = [screen["title"] for screen in available_screens]
@@ -699,18 +704,24 @@ def section_navigation(spec: dict, profile: dict) -> str:
             if selected_label is None:
                 selected_label = labels[0]
             return next(screen for screen in available_screens if screen["title"] == selected_label)""")
+        )
 
-    if nav_style == 'top_pills':
-        return sidebar_brand + textwrap.dedent("""
+    if nav_style == "top_pills":
+        return (
+            sidebar_brand
+            + textwrap.dedent("""
         def render_navigation(available_screens: list[dict]) -> dict:
             labels = [screen["title"] for screen in available_screens]
             selected_label = st.pills("Navigation", labels, label_visibility="collapsed")
             if selected_label is None:
                 selected_label = labels[0]
             return next(screen for screen in available_screens if screen["title"] == selected_label)""")
+        )
 
-    if nav_style == 'sidebar_segmented':
-        return sidebar_brand + textwrap.dedent("""
+    if nav_style == "sidebar_segmented":
+        return (
+            sidebar_brand
+            + textwrap.dedent("""
         def render_navigation(available_screens: list[dict]) -> dict:
             _render_sidebar_brand()
             labels = [screen["title"] for screen in available_screens]
@@ -718,36 +729,41 @@ def section_navigation(spec: dict, profile: dict) -> str:
             if selected_label is None:
                 selected_label = labels[0]
             return next(screen for screen in available_screens if screen["title"] == selected_label)""")
+        )
 
-    return sidebar_brand + textwrap.dedent("""
+    return (
+        sidebar_brand
+        + textwrap.dedent("""
         def render_navigation(available_screens: list[dict]) -> dict:
             _render_sidebar_brand()
             labels = [screen["title"] for screen in available_screens]
             selected_label = st.sidebar.radio("Navigation", labels, label_visibility="collapsed")
             return next(screen for screen in available_screens if screen["title"] == selected_label)""")
+    )
 
 
 def section_dashboard(spec: dict, theme: dict, profile: dict) -> str:
-    layout = profile.get('dashboard_layout', 'metrics_grid')
-    charts = profile.get('dashboard_charts', [])
+    layout = profile.get("dashboard_layout", "metrics_grid")
+    charts = profile.get("dashboard_charts", [])
 
     chart_helpers = _build_chart_helpers(charts)
 
-    if layout == 'financial_kpi':
+    if layout == "financial_kpi":
         return chart_helpers + _dashboard_financial_kpi()
-    if layout == 'pipeline_funnel':
+    if layout == "pipeline_funnel":
         return chart_helpers + _dashboard_pipeline_funnel()
-    if layout == 'status_board':
+    if layout == "status_board":
         return chart_helpers + _dashboard_status_board()
-    if layout == 'operations_hub':
+    if layout == "operations_hub":
         return chart_helpers + _dashboard_operations_hub()
     return chart_helpers + _dashboard_metrics_grid()
 
 
 def _build_chart_helpers(charts: list[str]) -> str:
     parts = []
-    if 'state_dist' in charts or 'state_bar' in charts:
-        parts.append(textwrap.dedent("""\
+    if "state_dist" in charts or "state_bar" in charts:
+        parts.append(
+            textwrap.dedent("""\
         def _chart_state_distribution(entity: dict) -> None:
             records = fetch_records(entity)
             if not records or not workflow_enabled():
@@ -756,10 +772,12 @@ def _build_chart_helpers(charts: list[str]) -> str:
             for row in records:
                 state = row["workflow_state"] or "Unknown"
                 counts[state] = counts.get(state, 0) + 1
-            st.bar_chart(counts)"""))
+            st.bar_chart(counts)""")
+        )
 
-    if 'bar_totals' in charts:
-        parts.append(textwrap.dedent("""\
+    if "bar_totals" in charts:
+        parts.append(
+            textwrap.dedent("""\
         def _chart_bar_totals(entity: dict) -> None:
             records = fetch_records(entity)
             dec_field = first_decimal_field(entity)
@@ -769,10 +787,12 @@ def _build_chart_helpers(charts: list[str]) -> str:
             for row in records:
                 state = row["workflow_state"] or "Unknown"
                 totals[state] = totals.get(state, 0) + (row[dec_field] or 0)
-            st.bar_chart(totals)"""))
+            st.bar_chart(totals)""")
+        )
 
-    if 'area_pipeline' in charts:
-        parts.append(textwrap.dedent("""\
+    if "area_pipeline" in charts:
+        parts.append(
+            textwrap.dedent("""\
         def _chart_area_pipeline(entity: dict) -> None:
             records = fetch_records(entity)
             dec_field = first_decimal_field(entity)
@@ -788,10 +808,12 @@ def _build_chart_helpers(charts: list[str]) -> str:
                 for row in records:
                     state = row["workflow_state"] or "Unknown"
                     data[state] = data.get(state, 0) + 1
-            st.area_chart(data)"""))
+            st.area_chart(data)""")
+        )
 
-    if 'line_trend' in charts:
-        parts.append(textwrap.dedent("""\
+    if "line_trend" in charts:
+        parts.append(
+            textwrap.dedent("""\
         def _chart_line_trend(entity: dict) -> None:
             records = fetch_records(entity)
             date_field = first_date_field(entity)
@@ -803,11 +825,12 @@ def _build_chart_helpers(charts: list[str]) -> str:
                 if d:
                     buckets[d] = buckets.get(d, 0) + 1
             if buckets:
-                st.line_chart(dict(sorted(buckets.items())))"""))
+                st.line_chart(dict(sorted(buckets.items())))""")
+        )
 
     if not parts:
-        return ''
-    return '\n\n'.join(parts) + '\n\n'
+        return ""
+    return "\n\n".join(parts) + "\n\n"
 
 
 def _dashboard_metrics_grid() -> str:
@@ -861,7 +884,7 @@ def _dashboard_metrics_grid() -> str:
         "            with screen_columns[index % len(screen_columns)]:\n"
         '                subtitle = screen["screen_type"].replace("_", " ").title()\n'
         '                if screen.get("entity"):\n'
-        "                    subtitle += f' for {get_entity(screen[\"entity\"])[\"name\"]}'\n"
+        '                    subtitle += f\' for {get_entity(screen["entity"])["name"]}\'\n'
         "                st.markdown(\n"
         f"                    f{TQ}\n"
         '                    <div class="info-panel compact-panel">\n'
@@ -1079,13 +1102,13 @@ def _dashboard_operations_hub() -> str:
 
 
 def section_list_screen(spec: dict, theme: dict, profile: dict) -> str:
-    list_style = profile.get('list_style', 'dataframe')
-    use_download = profile.get('use_download', False)
-    use_column_config = profile.get('list_column_config', False)
+    list_style = profile.get("list_style", "dataframe")
+    use_download = profile.get("use_download", False)
+    use_column_config = profile.get("list_column_config", False)
 
-    if list_style == 'grouped_expanders':
+    if list_style == "grouped_expanders":
         return _list_grouped_expanders()
-    if list_style == 'rich_dataframe':
+    if list_style == "rich_dataframe":
         return _list_rich_dataframe(use_column_config, use_download)
     return _list_plain_dataframe()
 
@@ -1145,15 +1168,15 @@ def _list_plain_dataframe() -> str:
 
 
 def _list_rich_dataframe(use_column_config: bool, use_download: bool) -> str:
-    config_arg = ''
+    config_arg = ""
     if use_column_config:
-        config_arg = '\n        column_config=build_column_config(entity),'
+        config_arg = "\n        column_config=build_column_config(entity),"
 
-    download_block = ''
+    download_block = ""
     if use_download:
         download_block = (
             "\n"
-            '    csv_data = records_to_csv(entity, filtered)\n'
+            "    csv_data = records_to_csv(entity, filtered)\n"
             "    if csv_data:\n"
             "        st.download_button(\n"
             '            "Download CSV",\n'
@@ -1163,7 +1186,8 @@ def _list_rich_dataframe(use_column_config: bool, use_download: bool) -> str:
             "        )"
         )
 
-    return textwrap.dedent("""\
+    return (
+        textwrap.dedent("""\
         def render_list_screen(screen: dict) -> None:
             entity = get_entity(screen["entity"])
             records = fetch_records(entity)
@@ -1216,7 +1240,11 @@ def _list_rich_dataframe(use_column_config: bool, use_download: bool) -> str:
             st.dataframe(
                 [serialize_record(entity, row) for row in filtered],
                 use_container_width=True,
-                hide_index=True,""") + config_arg + "\n    )" + download_block
+                hide_index=True,""")
+        + config_arg
+        + "\n    )"
+        + download_block
+    )
 
 
 def _list_grouped_expanders() -> str:
@@ -1278,10 +1306,10 @@ def _list_grouped_expanders() -> str:
 
 
 def section_detail_screen(spec: dict, theme: dict, profile: dict) -> str:
-    detail_style = profile.get('detail_style', 'two_column')
-    use_badges = profile.get('use_badges', False)
+    detail_style = profile.get("detail_style", "two_column")
+    use_badges = profile.get("use_badges", False)
 
-    if detail_style == 'tabbed':
+    if detail_style == "tabbed":
         return _detail_tabbed(use_badges)
     return _detail_two_column()
 
@@ -1293,7 +1321,7 @@ def _detail_two_column() -> str:
         "    records = fetch_records(entity)\n"
         "    render_screen_header(\n"
         '        screen["title"],\n'
-        "        entity[\"description\"] or f'Inspect a single {entity[\"name\"].lower()} record and its current state.',\n"
+        '        entity["description"] or f\'Inspect a single {entity["name"].lower()} record and its current state.\',\n'
         "        f'{entity[\"name\"]} detail',\n"
         "        [f'{len(records)} available records'],\n"
         "    )\n"
@@ -1363,8 +1391,7 @@ def _detail_tabbed(use_badges: bool) -> str:
     state_display = ""
     if use_badges:
         state_display = (
-            '        if "State" in payload:\n'
-            '            st.badge(payload["State"])\n'
+            '        if "State" in payload:\n            st.badge(payload["State"])\n'
         )
     else:
         state_display = (
@@ -1386,7 +1413,7 @@ def _detail_tabbed(use_badges: bool) -> str:
         "    records = fetch_records(entity)\n"
         "    render_screen_header(\n"
         '        screen["title"],\n'
-        "        entity[\"description\"] or f'Inspect a single {entity[\"name\"].lower()} record and its current state.',\n"
+        '        entity["description"] or f\'Inspect a single {entity["name"].lower()} record and its current state.\',\n'
         "        f'{entity[\"name\"]} detail',\n"
         "        [f'{len(records)} available records'],\n"
         "    )\n"
@@ -1465,9 +1492,9 @@ def _detail_tabbed(use_badges: bool) -> str:
 
 
 def section_form_screen(spec: dict, theme: dict, profile: dict) -> str:
-    form_style = profile.get('form_style', 'inline')
+    form_style = profile.get("form_style", "inline")
 
-    if form_style == 'dialog_create':
+    if form_style == "dialog_create":
         return _form_dialog_create()
     return _form_inline()
 
@@ -1476,7 +1503,7 @@ def _render_form_fields_code() -> str:
     """Generate the _render_form_fields function code, shared by both inline and dialog forms."""
     return (
         "def _render_form_fields(entity: dict, selected_row, selected_id, dialog_mode: bool = False) -> None:\n"
-        "    key_prefix = f'{entity[\"slug\"]}_{selected_id or \"new\"}'\n"
+        '    key_prefix = f\'{entity["slug"]}_{selected_id or "new"}\'\n'
         "    payload = hydrate_calculated_fields(\n"
         "        entity,\n"
         "        collect_current_values(entity, selected_row, key_prefix),\n"
@@ -1492,7 +1519,7 @@ def _render_form_fields_code() -> str:
         '            default_value = selected_row["workflow_state"] if selected_row else default_state()\n'
         '            state_key = widget_key(key_prefix, "workflow_state")\n'
         "            current_state = st.session_state.get(state_key, default_value)\n"
-        "            payload[\"workflow_state\"] = st.selectbox(\n"
+        '            payload["workflow_state"] = st.selectbox(\n'
         '                "Workflow state",\n'
         "                options=states,\n"
         "                index=states.index(current_state) if current_state in states else 0,\n"
@@ -1581,7 +1608,7 @@ def _render_form_fields_code() -> str:
         '        for field in entity["fields"]:\n'
         '            if field["name"] not in visible_field_names:\n'
         "                continue\n"
-        "            expression = (field.get(\"validation_expression\") or \"\").strip()\n"
+        '            expression = (field.get("validation_expression") or "").strip()\n'
         "            if not expression:\n"
         "                continue\n"
         "            context = dict(payload)\n"
@@ -1589,7 +1616,7 @@ def _render_form_fields_code() -> str:
         "            is_valid = bool(safe_rule_value(expression, context, False))\n"
         "            if not is_valid:\n"
         "                validation_errors.append(\n"
-        "                    field.get(\"validation_message\") or f'{field[\"label\"]} failed validation.'\n"
+        '                    field.get("validation_message") or f\'{field["label"]} failed validation.\'\n'
         "                )\n"
         "        if validation_errors:\n"
         "            for message in validation_errors:\n"
@@ -1598,7 +1625,7 @@ def _render_form_fields_code() -> str:
         "        if selected_row:\n"
         '            update_record(entity, selected_row["id"], payload)\n'
         "            clear_form_state(entity, key_prefix)\n"
-        "            notify_success(f'Updated {entity[\"name\"]} #{selected_row[\"id\"]}')\n"
+        '            notify_success(f\'Updated {entity["name"]} #{selected_row["id"]}\')\n'
         "        else:\n"
         "            insert_record(entity, payload)\n"
         "            clear_form_state(entity, key_prefix)\n"
@@ -1614,15 +1641,15 @@ def _form_inline() -> str:
         "    records = fetch_records(entity)\n"
         "    render_screen_header(\n"
         '        screen["title"],\n'
-        "        entity[\"description\"] or f'Create or update {entity[\"plural_name\"].lower()} while preserving prototype rules and workflow state.',\n"
+        '        entity["description"] or f\'Create or update {entity["plural_name"].lower()} while preserving prototype rules and workflow state.\',\n'
         "        f'{entity[\"name\"]} editor',\n"
         "        [\n"
         "            f'{len(records)} saved records',\n"
-        "            f'{sum(1 for field in entity[\"fields\"] if field.get(\"is_calculated\"))} calculated fields',\n"
+        '            f\'{sum(1 for field in entity["fields"] if field.get("is_calculated"))} calculated fields\',\n'
         "        ],\n"
         "    )\n"
         "\n"
-        '    mode_col, target_col = st.columns([0.8, 1.2])\n'
+        "    mode_col, target_col = st.columns([0.8, 1.2])\n"
         '    mode = mode_col.radio("Mode", options=["Create new", "Edit existing"], horizontal=True)\n'
         "    selected_row = None\n"
         "    selected_id = None\n"
@@ -1656,8 +1683,7 @@ def _form_inline() -> str:
         "        )\n"
         "\n"
         "    _render_form_fields(entity, selected_row, selected_id)\n"
-        "\n\n"
-        + _render_form_fields_code()
+        "\n\n" + _render_form_fields_code()
     )
 
 
@@ -1668,11 +1694,11 @@ def _form_dialog_create() -> str:
         "    records = fetch_records(entity)\n"
         "    render_screen_header(\n"
         '        screen["title"],\n'
-        "        entity[\"description\"] or f'Create or update {entity[\"plural_name\"].lower()} while preserving prototype rules and workflow state.',\n"
+        '        entity["description"] or f\'Create or update {entity["plural_name"].lower()} while preserving prototype rules and workflow state.\',\n'
         "        f'{entity[\"name\"]} editor',\n"
         "        [\n"
         "            f'{len(records)} saved records',\n"
-        "            f'{sum(1 for field in entity[\"fields\"] if field.get(\"is_calculated\"))} calculated fields',\n"
+        '            f\'{sum(1 for field in entity["fields"] if field.get("is_calculated"))} calculated fields\',\n'
         "        ],\n"
         "    )\n"
         "\n"
@@ -1698,7 +1724,7 @@ def _form_dialog_create() -> str:
         "    _render_dialog_form_fields(entity)\n"
         "\n\n"
         "def _render_dialog_form_fields(entity: dict) -> None:\n"
-        '    key_prefix = f\'{entity["slug"]}_dialog_new\'\n'
+        "    key_prefix = f'{entity[\"slug\"]}_dialog_new'\n"
         "    payload = hydrate_calculated_fields(\n"
         "        entity,\n"
         "        collect_current_values(entity, None, key_prefix),\n"
@@ -1709,7 +1735,7 @@ def _form_dialog_create() -> str:
         '        states = [state["name"] for state in SPEC["workflow_states"]]\n'
         '        state_key = widget_key(key_prefix, "workflow_state")\n'
         "        current_state = st.session_state.get(state_key, default_state())\n"
-        "        payload[\"workflow_state\"] = st.selectbox(\n"
+        '        payload["workflow_state"] = st.selectbox(\n'
         '            "Workflow state",\n'
         "            options=states,\n"
         "            index=states.index(current_state) if current_state in states else 0,\n"
@@ -1749,7 +1775,7 @@ def _form_dialog_create() -> str:
         '        for field in entity["fields"]:\n'
         '            if field["name"] not in visible_field_names:\n'
         "                continue\n"
-        "            expression = (field.get(\"validation_expression\") or \"\").strip()\n"
+        '            expression = (field.get("validation_expression") or "").strip()\n'
         "            if not expression:\n"
         "                continue\n"
         "            context = dict(payload)\n"
@@ -1757,7 +1783,7 @@ def _form_dialog_create() -> str:
         "            is_valid = bool(safe_rule_value(expression, context, False))\n"
         "            if not is_valid:\n"
         "                validation_errors.append(\n"
-        "                    field.get(\"validation_message\") or f'{field[\"label\"]} failed validation.'\n"
+        '                    field.get("validation_message") or f\'{field["label"]} failed validation.\'\n'
         "                )\n"
         "        if validation_errors:\n"
         "            for message in validation_errors:\n"
@@ -1767,8 +1793,7 @@ def _form_dialog_create() -> str:
         "        clear_form_state(entity, key_prefix)\n"
         "        notify_success(f'Created a new {entity[\"name\"].lower()} record')\n"
         "        st.rerun()\n"
-        "\n\n"
-        + _render_form_fields_code()
+        "\n\n" + _render_form_fields_code()
     )
 
 
@@ -1800,18 +1825,16 @@ def section_css(theme: dict, profile: dict) -> str:
 
 
 def section_main(spec: dict, profile: dict) -> str:
-    logo_emoji = profile.get('logo_emoji')
+    logo_emoji = profile.get("logo_emoji")
 
-    logo_line = ''
+    logo_line = ""
     if logo_emoji:
         logo_line = f'\nst.sidebar.markdown("# {logo_emoji}")'
 
     return (
         "st.set_page_config(page_title=f'{SPEC[\"name\"]} Prototype', layout='wide')\n"
-        "ensure_database()"
-        + logo_line
-        + "\n\n"
-        "available_screens = [screen for screen in SPEC[\"screens\"] if screen.get(\"include_in_navigation\", True)]\n"
+        "ensure_database()" + logo_line + "\n\n"
+        'available_screens = [screen for screen in SPEC["screens"] if screen.get("include_in_navigation", True)]\n'
         "if not available_screens:\n"
         "    render_dashboard()\n"
         "else:\n"

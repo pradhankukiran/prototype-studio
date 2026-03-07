@@ -5,35 +5,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('builder', '0002_fielddefinition_calculation_expression_and_more'),
+        ("builder", "0002_fielddefinition_calculation_expression_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='entitydefinition',
-            index=models.Index(fields=['project', 'order'], name='builder_ent_project_7388f2_idx'),
+            model_name="entitydefinition",
+            index=models.Index(
+                fields=["project", "order"], name="builder_ent_project_7388f2_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='fielddefinition',
-            index=models.Index(fields=['entity', 'order'], name='builder_fie_entity__346122_idx'),
+            model_name="fielddefinition",
+            index=models.Index(
+                fields=["entity", "order"], name="builder_fie_entity__346122_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='generatedartifact',
-            index=models.Index(fields=['project', 'artifact_type'], name='builder_gen_project_03fd50_idx'),
+            model_name="generatedartifact",
+            index=models.Index(
+                fields=["project", "artifact_type"],
+                name="builder_gen_project_03fd50_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='prototypeproject',
-            index=models.Index(fields=['-updated_at'], name='builder_pro_updated_06e570_idx'),
+            model_name="prototypeproject",
+            index=models.Index(
+                fields=["-updated_at"], name="builder_pro_updated_06e570_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='screendefinition',
-            index=models.Index(fields=['project', 'order'], name='builder_scr_project_ea0259_idx'),
+            model_name="screendefinition",
+            index=models.Index(
+                fields=["project", "order"], name="builder_scr_project_ea0259_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='workflowstate',
-            index=models.Index(fields=['project', 'order'], name='builder_wor_project_985ef6_idx'),
+            model_name="workflowstate",
+            index=models.Index(
+                fields=["project", "order"], name="builder_wor_project_985ef6_idx"
+            ),
         ),
     ]

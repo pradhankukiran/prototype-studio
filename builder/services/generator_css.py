@@ -2,8 +2,8 @@ from __future__ import annotations
 
 
 def build_css(theme: dict, profile: dict) -> str:
-    variant = profile.get('css_variant', 'clean')
-    return _base_css(theme) + '\n' + _variant_css(theme, variant)
+    variant = profile.get("css_variant", "clean")
+    return _base_css(theme) + "\n" + _variant_css(theme, variant)
 
 
 def _base_css(theme: dict) -> str:
@@ -291,18 +291,18 @@ def _base_css(theme: dict) -> str:
 
 def _variant_css(theme: dict, variant: str) -> str:
     builders = {
-        'clean': _variant_clean,
-        'warm_corporate': _variant_warm_corporate,
-        'cool_professional': _variant_cool_professional,
-        'formal_gold': _variant_formal_gold,
-        'warm_urgent': _variant_warm_urgent,
+        "clean": _variant_clean,
+        "warm_corporate": _variant_warm_corporate,
+        "cool_professional": _variant_cool_professional,
+        "formal_gold": _variant_formal_gold,
+        "warm_urgent": _variant_warm_urgent,
     }
     builder = builders.get(variant, _variant_clean)
     return builder(theme)
 
 
 def _variant_clean(theme: dict) -> str:
-    return ''
+    return ""
 
 
 def _variant_warm_corporate(theme: dict) -> str:

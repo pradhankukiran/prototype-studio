@@ -9,7 +9,11 @@ from django.conf import settings
 from django.utils import timezone
 
 from ..models import GeneratedArtifact, ProjectTemplate, PrototypeProject
-from .generator_profiles import get_template_profile, get_theme_profile, render_config_toml
+from .generator_profiles import (
+    get_template_profile,
+    get_theme_profile,
+    render_config_toml,
+)
 from .generator_sections import (
     section_constants,
     section_css,
@@ -33,64 +37,68 @@ def _build_theme_profile(template_kind: str) -> dict:
 
 def build_project_spec(project: PrototypeProject) -> dict:
     workflow_states = list(
-        project.workflow_states.order_by('order', 'name').values(
-            'name',
-            'slug',
-            'order',
-            'is_initial',
-            'is_terminal',
+        project.workflow_states.order_by("order", "name").values(
+            "name",
+            "slug",
+            "order",
+            "is_initial",
+            "is_terminal",
         )
     )
 
     entities = []
-    for entity in project.entities.order_by('order', 'name').prefetch_related('fields'):
+    for entity in project.entities.order_by("order", "name").prefetch_related("fields"):
         entities.append(
             {
-                'name': entity.name,
-                'plural_name': entity.plural_name,
-                'slug': entity.slug,
-                'description': entity.description,
-                'fields': [
+                "name": entity.name,
+                "plural_name": entity.plural_name,
+                "slug": entity.slug,
+                "description": entity.description,
+                "fields": [
                     {
-                        'name': field.name,
-                        'label': field.label,
-                        'field_type': field.field_type,
-                        'required': field.required,
-                        'help_text': field.help_text,
-                        'include_in_list': field.include_in_list,
-                        'is_calculated': field.is_calculated,
-                        'calculation_expression': field.calculation_expression,
-                        'visibility_condition': field.visibility_condition,
-                        'validation_expression': field.validation_expression,
-                        'validation_message': field.validation_message,
-                        'choices': field.parsed_choices,
-                        'related_entity': field.related_entity.slug if field.related_entity else None,
+                        "name": field.name,
+                        "label": field.label,
+                        "field_type": field.field_type,
+                        "required": field.required,
+                        "help_text": field.help_text,
+                        "include_in_list": field.include_in_list,
+                        "is_calculated": field.is_calculated,
+                        "calculation_expression": field.calculation_expression,
+                        "visibility_condition": field.visibility_condition,
+                        "validation_expression": field.validation_expression,
+                        "validation_message": field.validation_message,
+                        "choices": field.parsed_choices,
+                        "related_entity": field.related_entity.slug
+                        if field.related_entity
+                        else None,
                     }
-                    for field in entity.fields.order_by('order', 'name')
+                    for field in entity.fields.order_by("order", "name")
                 ],
             }
         )
 
     screens = [
         {
-            'title': screen.title,
-            'slug': screen.slug,
-            'screen_type': screen.screen_type,
-            'entity': screen.entity.slug if screen.entity else None,
-            'include_in_navigation': screen.include_in_navigation,
+            "title": screen.title,
+            "slug": screen.slug,
+            "screen_type": screen.screen_type,
+            "entity": screen.entity.slug if screen.entity else None,
+            "include_in_navigation": screen.include_in_navigation,
         }
-        for screen in project.screens.order_by('order', 'title').select_related('entity')
+        for screen in project.screens.order_by("order", "title").select_related(
+            "entity"
+        )
     ]
 
     return {
-        'name': project.name,
-        'slug': project.slug,
-        'description': project.description,
-        'template_kind': project.template_kind,
-        'generated_at': timezone.now().isoformat(),
-        'workflow_states': workflow_states,
-        'entities': entities,
-        'screens': screens,
+        "name": project.name,
+        "slug": project.slug,
+        "description": project.description,
+        "template_kind": project.template_kind,
+        "generated_at": timezone.now().isoformat(),
+        "workflow_states": workflow_states,
+        "entities": entities,
+        "screens": screens,
     }
 
 
@@ -99,43 +107,43 @@ def generate_streamlit_artifacts(project: PrototypeProject) -> list[GeneratedArt
     if project_dir.exists():
         shutil.rmtree(project_dir)
     project_dir.mkdir(parents=True, exist_ok=True)
-    archive_root = settings.GENERATED_ROOT / f'{project.slug}-streamlit-prototype'
-    archive_file = archive_root.with_suffix('.zip')
+    archive_root = settings.GENERATED_ROOT / f"{project.slug}-streamlit-prototype"
+    archive_file = archive_root.with_suffix(".zip")
     if archive_file.exists():
         archive_file.unlink()
 
     spec = build_project_spec(project)
-    spec_path = project_dir / 'prototype_spec.json'
-    app_path = project_dir / 'app.py'
-    readme_path = project_dir / 'README.md'
-    requirements_path = project_dir / 'requirements.txt'
+    spec_path = project_dir / "prototype_spec.json"
+    app_path = project_dir / "app.py"
+    readme_path = project_dir / "README.md"
+    requirements_path = project_dir / "requirements.txt"
 
-    streamlit_dir = project_dir / '.streamlit'
+    streamlit_dir = project_dir / ".streamlit"
     streamlit_dir.mkdir(exist_ok=True)
-    config_path = streamlit_dir / 'config.toml'
+    config_path = streamlit_dir / "config.toml"
 
-    spec_path.write_text(json.dumps(spec, indent=2), encoding='utf-8')
-    app_path.write_text(render_streamlit_app(spec), encoding='utf-8')
-    readme_path.write_text(render_readme(spec), encoding='utf-8')
-    requirements_path.write_text("streamlit>=1.44,<2.0\n", encoding='utf-8')
-    config_path.write_text(render_config_toml(spec), encoding='utf-8')
+    spec_path.write_text(json.dumps(spec, indent=2), encoding="utf-8")
+    app_path.write_text(render_streamlit_app(spec), encoding="utf-8")
+    readme_path.write_text(render_readme(spec), encoding="utf-8")
+    requirements_path.write_text("streamlit>=1.44,<2.0\n", encoding="utf-8")
+    config_path.write_text(render_config_toml(spec), encoding="utf-8")
 
     archive_path = Path(
         shutil.make_archive(
             base_name=str(archive_root),
-            format='zip',
+            format="zip",
             root_dir=project_dir,
         )
     )
 
     project.artifacts.all().delete()
     artifacts = [
-        ('app', app_path),
-        ('spec', spec_path),
-        ('readme', readme_path),
-        ('requirements', requirements_path),
-        ('config', config_path),
-        ('zip', archive_path),
+        ("app", app_path),
+        ("spec", spec_path),
+        ("readme", readme_path),
+        ("requirements", requirements_path),
+        ("config", config_path),
+        ("zip", archive_path),
     ]
     created_artifacts = [
         GeneratedArtifact.objects.create(
@@ -146,14 +154,14 @@ def generate_streamlit_artifacts(project: PrototypeProject) -> list[GeneratedArt
         for artifact_type, path in artifacts
     ]
     project.latest_generation_at = timezone.now()
-    project.save(update_fields=['latest_generation_at', 'updated_at'])
+    project.save(update_fields=["latest_generation_at", "updated_at"])
     return created_artifacts
 
 
 def render_readme(spec: dict) -> str:
     return textwrap.dedent(
         f"""\
-        # {spec['name']} Streamlit Prototype
+        # {spec["name"]} Streamlit Prototype
 
         This package was generated by Prototype Studio from the saved project spec.
 
@@ -174,13 +182,13 @@ def render_readme(spec: dict) -> str:
 
         ## Screens
 
-        {chr(10).join(f"- {screen['title']} ({screen['screen_type']})" for screen in spec['screens']) or '- No screens defined yet'}
+        {chr(10).join(f"- {screen['title']} ({screen['screen_type']})" for screen in spec["screens"]) or "- No screens defined yet"}
         """
     )
 
 
 def render_streamlit_app(spec: dict) -> str:
-    kind = spec.get('template_kind', ProjectTemplate.BLANK)
+    kind = spec.get("template_kind", ProjectTemplate.BLANK)
     theme = get_theme_profile(kind)
     profile = get_template_profile(kind)
     sections = [
@@ -198,4 +206,4 @@ def render_streamlit_app(spec: dict) -> str:
         section_css(theme, profile),
         section_main(spec, profile),
     ]
-    return '\n\n'.join(sections)
+    return "\n\n".join(sections)

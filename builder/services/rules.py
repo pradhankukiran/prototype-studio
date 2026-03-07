@@ -9,14 +9,14 @@ class RuleExpressionError(ValueError):
 
 
 ALLOWED_FUNCTIONS = {
-    'abs': abs,
-    'float': float,
-    'int': int,
-    'len': len,
-    'max': max,
-    'min': min,
-    'round': round,
-    'str': str,
+    "abs": abs,
+    "float": float,
+    "int": int,
+    "len": len,
+    "max": max,
+    "min": min,
+    "round": round,
+    "str": str,
 }
 
 ALLOWED_BINARY_OPERATORS = {
@@ -46,19 +46,19 @@ ALLOWED_COMPARE_OPERATORS = {
 
 
 def validate_rule_expression(expression: str) -> None:
-    expression = (expression or '').strip()
+    expression = (expression or "").strip()
     if not expression:
         return
     try:
-        parsed = ast.parse(expression, mode='eval')
+        parsed = ast.parse(expression, mode="eval")
     except SyntaxError as exc:
-        raise RuleExpressionError('Rule expression has invalid syntax.') from exc
+        raise RuleExpressionError("Rule expression has invalid syntax.") from exc
     _validate_node(parsed.body)
 
 
 def evaluate_rule_expression(expression: str, context: dict[str, object]) -> object:
     validate_rule_expression(expression)
-    parsed = ast.parse(expression, mode='eval')
+    parsed = ast.parse(expression, mode="eval")
     return _evaluate_node(parsed.body, context)
 
 
@@ -67,13 +67,13 @@ def _validate_node(node: ast.AST) -> None:
         return
     if isinstance(node, ast.BinOp):
         if type(node.op) not in ALLOWED_BINARY_OPERATORS:
-            raise RuleExpressionError('Unsupported operator in rule expression.')
+            raise RuleExpressionError("Unsupported operator in rule expression.")
         _validate_node(node.left)
         _validate_node(node.right)
         return
     if isinstance(node, ast.UnaryOp):
         if type(node.op) not in ALLOWED_UNARY_OPERATORS:
-            raise RuleExpressionError('Unsupported unary operator in rule expression.')
+            raise RuleExpressionError("Unsupported unary operator in rule expression.")
         _validate_node(node.operand)
         return
     if isinstance(node, ast.BoolOp):
@@ -86,11 +86,13 @@ def _validate_node(node: ast.AST) -> None:
             _validate_node(comparator)
         for operator_node in node.ops:
             if type(operator_node) not in ALLOWED_COMPARE_OPERATORS:
-                raise RuleExpressionError('Unsupported comparison in rule expression.')
+                raise RuleExpressionError("Unsupported comparison in rule expression.")
         return
     if isinstance(node, ast.Call):
         if not isinstance(node.func, ast.Name) or node.func.id not in ALLOWED_FUNCTIONS:
-            raise RuleExpressionError('Only basic helper functions are allowed in rule expressions.')
+            raise RuleExpressionError(
+                "Only basic helper functions are allowed in rule expressions."
+            )
         for argument in node.args:
             _validate_node(argument)
         for keyword in node.keywords:
@@ -101,7 +103,7 @@ def _validate_node(node: ast.AST) -> None:
         _validate_node(node.body)
         _validate_node(node.orelse)
         return
-    raise RuleExpressionError('Unsupported construct in rule expression.')
+    raise RuleExpressionError("Unsupported construct in rule expression.")
 
 
 def _evaluate_node(node: ast.AST, context: dict[str, object]) -> object:
@@ -109,7 +111,7 @@ def _evaluate_node(node: ast.AST, context: dict[str, object]) -> object:
         return node.value
     if isinstance(node, ast.Name):
         if node.id not in context:
-            raise RuleExpressionError(f'Unknown field reference: {node.id}')
+            raise RuleExpressionError(f"Unknown field reference: {node.id}")
         return context[node.id]
     if isinstance(node, ast.BinOp):
         left = _evaluate_node(node.left, context)
@@ -134,8 +136,15 @@ def _evaluate_node(node: ast.AST, context: dict[str, object]) -> object:
     if isinstance(node, ast.Call):
         function = ALLOWED_FUNCTIONS[node.func.id]
         arguments = [_evaluate_node(argument, context) for argument in node.args]
-        keyword_arguments = {keyword.arg: _evaluate_node(keyword.value, context) for keyword in node.keywords}
+        keyword_arguments = {
+            keyword.arg: _evaluate_node(keyword.value, context)
+            for keyword in node.keywords
+        }
         return function(*arguments, **keyword_arguments)
     if isinstance(node, ast.IfExp):
-        return _evaluate_node(node.body, context) if _evaluate_node(node.test, context) else _evaluate_node(node.orelse, context)
-    raise RuleExpressionError('Unsupported construct in rule expression.')
+        return (
+            _evaluate_node(node.body, context)
+            if _evaluate_node(node.test, context)
+            else _evaluate_node(node.orelse, context)
+        )
+    raise RuleExpressionError("Unsupported construct in rule expression.")

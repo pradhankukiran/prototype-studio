@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,119 +14,278 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='PrototypeProject',
+            name="PrototypeProject",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=120)),
-                ('slug', models.SlugField(blank=True, max_length=140, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('template_kind', models.CharField(choices=[('blank', 'Blank workspace'), ('quote_builder', 'Quote builder'), ('crm', 'CRM'), ('approval_flow', 'Approval workflow'), ('case_tracker', 'Case tracker')], default='blank', max_length=32)),
-                ('latest_generation_at', models.DateTimeField(blank=True, null=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='prototype_projects', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=120)),
+                ("slug", models.SlugField(blank=True, max_length=140, unique=True)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "template_kind",
+                    models.CharField(
+                        choices=[
+                            ("blank", "Blank workspace"),
+                            ("quote_builder", "Quote builder"),
+                            ("crm", "CRM"),
+                            ("approval_flow", "Approval workflow"),
+                            ("case_tracker", "Case tracker"),
+                        ],
+                        default="blank",
+                        max_length=32,
+                    ),
+                ),
+                ("latest_generation_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="prototype_projects",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-updated_at', 'name'],
+                "ordering": ["-updated_at", "name"],
             },
         ),
         migrations.CreateModel(
-            name='GeneratedArtifact',
+            name="GeneratedArtifact",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('artifact_type', models.CharField(max_length=40)),
-                ('relative_path', models.CharField(max_length=255)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='artifacts', to='builder.prototypeproject')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("artifact_type", models.CharField(max_length=40)),
+                ("relative_path", models.CharField(max_length=255)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="artifacts",
+                        to="builder.prototypeproject",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['relative_path'],
+                "ordering": ["relative_path"],
             },
         ),
         migrations.CreateModel(
-            name='EntityDefinition',
+            name="EntityDefinition",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=80)),
-                ('plural_name', models.CharField(blank=True, max_length=80)),
-                ('slug', models.SlugField(blank=True, max_length=100)),
-                ('description', models.TextField(blank=True)),
-                ('order', models.PositiveIntegerField(default=0)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='entities', to='builder.prototypeproject')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=80)),
+                ("plural_name", models.CharField(blank=True, max_length=80)),
+                ("slug", models.SlugField(blank=True, max_length=100)),
+                ("description", models.TextField(blank=True)),
+                ("order", models.PositiveIntegerField(default=0)),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="entities",
+                        to="builder.prototypeproject",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['order', 'name'],
+                "ordering": ["order", "name"],
             },
         ),
         migrations.CreateModel(
-            name='ScreenDefinition',
+            name="ScreenDefinition",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('title', models.CharField(max_length=80)),
-                ('slug', models.SlugField(blank=True, max_length=100)),
-                ('screen_type', models.CharField(choices=[('dashboard', 'Dashboard'), ('list', 'List'), ('form', 'Form'), ('detail', 'Detail')], max_length=20)),
-                ('order', models.PositiveIntegerField(default=0)),
-                ('include_in_navigation', models.BooleanField(default=True)),
-                ('entity', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='screens', to='builder.entitydefinition')),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='screens', to='builder.prototypeproject')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("title", models.CharField(max_length=80)),
+                ("slug", models.SlugField(blank=True, max_length=100)),
+                (
+                    "screen_type",
+                    models.CharField(
+                        choices=[
+                            ("dashboard", "Dashboard"),
+                            ("list", "List"),
+                            ("form", "Form"),
+                            ("detail", "Detail"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("order", models.PositiveIntegerField(default=0)),
+                ("include_in_navigation", models.BooleanField(default=True)),
+                (
+                    "entity",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="screens",
+                        to="builder.entitydefinition",
+                    ),
+                ),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="screens",
+                        to="builder.prototypeproject",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['order', 'title'],
+                "ordering": ["order", "title"],
             },
         ),
         migrations.CreateModel(
-            name='WorkflowState',
+            name="WorkflowState",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=60)),
-                ('slug', models.SlugField(blank=True, max_length=80)),
-                ('order', models.PositiveIntegerField(default=0)),
-                ('is_initial', models.BooleanField(default=False)),
-                ('is_terminal', models.BooleanField(default=False)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='workflow_states', to='builder.prototypeproject')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=60)),
+                ("slug", models.SlugField(blank=True, max_length=80)),
+                ("order", models.PositiveIntegerField(default=0)),
+                ("is_initial", models.BooleanField(default=False)),
+                ("is_terminal", models.BooleanField(default=False)),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="workflow_states",
+                        to="builder.prototypeproject",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['order', 'name'],
+                "ordering": ["order", "name"],
             },
         ),
         migrations.CreateModel(
-            name='FieldDefinition',
+            name="FieldDefinition",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=80)),
-                ('label', models.CharField(blank=True, max_length=80)),
-                ('field_type', models.CharField(choices=[('short_text', 'Short text'), ('long_text', 'Long text'), ('integer', 'Integer'), ('decimal', 'Decimal'), ('date', 'Date'), ('boolean', 'Boolean'), ('choice', 'Choice'), ('relation', 'Relation')], max_length=24)),
-                ('required', models.BooleanField(default=False)),
-                ('help_text', models.CharField(blank=True, max_length=160)),
-                ('order', models.PositiveIntegerField(default=0)),
-                ('include_in_list', models.BooleanField(default=True)),
-                ('choices_text', models.TextField(blank=True)),
-                ('entity', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='fields', to='builder.entitydefinition')),
-                ('related_entity', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='related_fields', to='builder.entitydefinition')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=80)),
+                ("label", models.CharField(blank=True, max_length=80)),
+                (
+                    "field_type",
+                    models.CharField(
+                        choices=[
+                            ("short_text", "Short text"),
+                            ("long_text", "Long text"),
+                            ("integer", "Integer"),
+                            ("decimal", "Decimal"),
+                            ("date", "Date"),
+                            ("boolean", "Boolean"),
+                            ("choice", "Choice"),
+                            ("relation", "Relation"),
+                        ],
+                        max_length=24,
+                    ),
+                ),
+                ("required", models.BooleanField(default=False)),
+                ("help_text", models.CharField(blank=True, max_length=160)),
+                ("order", models.PositiveIntegerField(default=0)),
+                ("include_in_list", models.BooleanField(default=True)),
+                ("choices_text", models.TextField(blank=True)),
+                (
+                    "entity",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="fields",
+                        to="builder.entitydefinition",
+                    ),
+                ),
+                (
+                    "related_entity",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="related_fields",
+                        to="builder.entitydefinition",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['order', 'name'],
-                'constraints': [models.UniqueConstraint(fields=('entity', 'name'), name='uniq_field_name_per_entity')],
+                "ordering": ["order", "name"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("entity", "name"), name="uniq_field_name_per_entity"
+                    )
+                ],
             },
         ),
         migrations.AddConstraint(
-            model_name='entitydefinition',
-            constraint=models.UniqueConstraint(fields=('project', 'slug'), name='uniq_entity_slug_per_project'),
+            model_name="entitydefinition",
+            constraint=models.UniqueConstraint(
+                fields=("project", "slug"), name="uniq_entity_slug_per_project"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='screendefinition',
-            constraint=models.UniqueConstraint(fields=('project', 'slug'), name='uniq_screen_slug_per_project'),
+            model_name="screendefinition",
+            constraint=models.UniqueConstraint(
+                fields=("project", "slug"), name="uniq_screen_slug_per_project"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='workflowstate',
-            constraint=models.UniqueConstraint(fields=('project', 'slug'), name='uniq_workflow_slug_per_project'),
+            model_name="workflowstate",
+            constraint=models.UniqueConstraint(
+                fields=("project", "slug"), name="uniq_workflow_slug_per_project"
+            ),
         ),
     ]

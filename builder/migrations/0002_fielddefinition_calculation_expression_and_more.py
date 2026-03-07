@@ -4,35 +4,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('builder', '0001_initial'),
+        ("builder", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='fielddefinition',
-            name='calculation_expression',
+            model_name="fielddefinition",
+            name="calculation_expression",
             field=models.TextField(blank=True),
         ),
         migrations.AddField(
-            model_name='fielddefinition',
-            name='is_calculated',
+            model_name="fielddefinition",
+            name="is_calculated",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='fielddefinition',
-            name='validation_expression',
+            model_name="fielddefinition",
+            name="validation_expression",
             field=models.TextField(blank=True),
         ),
         migrations.AddField(
-            model_name='fielddefinition',
-            name='validation_message',
+            model_name="fielddefinition",
+            name="validation_message",
             field=models.CharField(blank=True, max_length=160),
         ),
         migrations.AddField(
-            model_name='fielddefinition',
-            name='visibility_condition',
+            model_name="fielddefinition",
+            name="visibility_condition",
             field=models.TextField(blank=True),
         ),
     ]
