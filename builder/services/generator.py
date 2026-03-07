@@ -240,7 +240,7 @@ def render_browser_preview(spec: dict) -> str:
         "/app/README.md": render_readme(spec),
         "/app/.streamlit/config.toml": render_config_toml(spec),
     }
-    title = html.escape(f'{spec["name"]} Browser Prototype')
+    title = html.escape(f"{spec['name']} Browser Prototype")
     return textwrap.dedent(
         f"""\
         <!doctype html>
