@@ -43,8 +43,8 @@ RAILWAY_RUNTIME_UNAVAILABLE_MESSAGE = (
 )
 
 BROWSER_PREVIEW_MESSAGE = (
-    "Browser prototype runs fully in this browser. Prototype data persists in "
-    "this browser only."
+    "Browser prototype runs fully in this browser. Prototype data resets when "
+    "this page reloads."
 )
 
 

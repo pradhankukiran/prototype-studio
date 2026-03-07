@@ -233,10 +233,7 @@ def _json_script_value(value: object) -> str:
 
 
 def render_browser_preview(spec: dict) -> str:
-    app_source = render_streamlit_app_with_options(
-        spec,
-        db_path_expression='Path("/mnt/prototype.db")',
-    )
+    app_source = render_streamlit_app(spec)
     files = {
         "/app/app.py": app_source,
         "/app/prototype_spec.json": json.dumps(spec, indent=2),
@@ -298,7 +295,7 @@ def render_browser_preview(spec: dict) -> str:
           <body>
             <div class="preview-shell">
               <strong>{title}</strong>
-              <span>Runs fully in this browser. Prototype data persists in this browser only.</span>
+              <span>Runs fully in this browser. Prototype data resets when this page reloads.</span>
             </div>
             <div id="root"></div>
             <script type="module">
@@ -311,7 +308,6 @@ def render_browser_preview(spec: dict) -> str:
                 {{
                   entrypoint: "/app/app.py",
                   files,
-                  idbfsMountpoints: ["/mnt"],
                   streamlitConfig: {{
                     "client.toolbarMode": "viewer",
                   }},

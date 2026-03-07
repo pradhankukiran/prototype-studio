@@ -150,7 +150,7 @@ class GeneratorTests(TestCase):
         )
         compile(app_source, str(Path(temp_dir) / app_artifact.relative_path), "exec")
         self.assertIn("@stlite/browser@1.2.0", browser_source)
-        self.assertIn("idbfsMountpoints", browser_source)
+        self.assertNotIn("idbfsMountpoints", browser_source)
 
 
 class RuleExpressionTests(TestCase):
