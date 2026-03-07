@@ -28,6 +28,6 @@ USER app
 ENV DJANGO_SETTINGS_MODULE=config.settings.production
 ENV PATH="/app/.venv/bin:$PATH"
 
-EXPOSE ${PORT:-8000}
+EXPOSE 8000
 
-CMD gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3
+CMD ["sh", "-c", "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3"]
