@@ -32,6 +32,8 @@ if RAILWAY_PUBLIC_DOMAIN:
     CSRF_TRUSTED_ORIGINS = [f"https://{RAILWAY_PUBLIC_DOMAIN}"]
 if RAILWAY_PRIVATE_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_PRIVATE_DOMAIN)  # noqa: F405
+if os.environ.get("RAILWAY_ENVIRONMENT"):
+    ALLOWED_HOSTS.append(".railway.internal")  # noqa: F405
 
 # Security headers
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "true").lower() == "true"
