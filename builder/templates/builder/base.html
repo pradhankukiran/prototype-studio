@@ -18,23 +18,16 @@
                     <small>Operational workspace for spec-first Python apps</small>
                 </span>
             </a>
-            {% if request.user.is_authenticated %}
-                <div class="header-actions">
-                    <nav class="site-nav">
-                        <a class="nav-link{% if request.resolver_match.url_name == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard' %}">
-                            Project library
-                        </a>
-                        <a class="nav-link{% if request.resolver_match.url_name == 'project-create' %} is-active{% endif %}" href="{% url 'project-create' %}">
-                            New workspace
-                        </a>
-                    </nav>
-                    <span class="account-chip">{{ request.user.username }}</span>
-                    <form action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button class="ghost-button" type="submit">Log out</button>
-                    </form>
-                </div>
-            {% endif %}
+            <div class="header-actions">
+                <nav class="site-nav">
+                    <a class="nav-link{% if request.resolver_match.url_name == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard' %}">
+                        Project library
+                    </a>
+                    <a class="nav-link{% if request.resolver_match.url_name == 'project-create' %} is-active{% endif %}" href="{% url 'project-create' %}">
+                        New workspace
+                    </a>
+                </nav>
+            </div>
         </header>
 
         {% if messages %}

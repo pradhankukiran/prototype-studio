@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.test import Client
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -245,7 +246,6 @@ class BuilderWorkflowTests(TestCase):
             username="builder", password="builder-pass-123"
         )
         self.client = Client()
-        self.client.force_login(self.user)
         self.project = PrototypeProject.objects.create(
             name="Builder Ops",
             created_by=self.user,
@@ -440,7 +440,7 @@ class BuilderWorkflowTests(TestCase):
         self.assertContains(response, "Runs fully in this browser.")
 
 
-class AuthorizationTests(TestCase):
+class PublicAccessTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
             username="owner", password="owner-pass-123"
@@ -448,55 +448,62 @@ class AuthorizationTests(TestCase):
         self.other = User.objects.create_user(
             username="other", password="other-pass-123"
         )
-        self.owner_client = Client()
-        self.owner_client.force_login(self.owner)
-        self.other_client = Client()
-        self.other_client.force_login(self.other)
+        self.client = Client()
         self.project = PrototypeProject.objects.create(
             name="Owner Project",
             created_by=self.owner,
             template_kind=ProjectTemplate.BLANK,
         )
+        self.other_project = PrototypeProject.objects.create(
+            name="Other Project",
+            created_by=self.other,
+            template_kind=ProjectTemplate.BLANK,
+        )
 
-    def test_owner_can_view_project_detail(self):
-        response = self.owner_client.get(
+    def test_home_redirects_to_dashboard(self):
+        response = self.client.get(reverse("home"))
+        self.assertRedirects(response, reverse("dashboard"))
+
+    def test_login_route_redirects_to_dashboard(self):
+        response = self.client.get(reverse("login"))
+        self.assertRedirects(response, reverse("dashboard"))
+
+    def test_project_detail_is_public(self):
+        response = self.client.get(
             reverse("project-detail", kwargs={"slug": self.project.slug})
         )
         self.assertEqual(response.status_code, 200)
 
-    def test_other_user_gets_404_on_project_detail(self):
-        response = self.other_client.get(
-            reverse("project-detail", kwargs={"slug": self.project.slug})
-        )
-        self.assertEqual(response.status_code, 404)
-
-    def test_other_user_gets_404_on_add_entity(self):
-        response = self.other_client.post(
+    def test_add_entity_is_public(self):
+        response = self.client.post(
             reverse("entity-add", kwargs={"slug": self.project.slug}),
             {"name": "Hack", "plural_name": "Hacks", "description": ""},
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertRedirects(response, self.project.get_absolute_url())
+        self.assertTrue(self.project.entities.filter(name="Hack").exists())
 
-    def test_other_user_gets_404_on_generate(self):
-        response = self.other_client.post(
+    def test_generate_is_public(self):
+        response = self.client.post(
             reverse("project-generate", kwargs={"slug": self.project.slug})
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertRedirects(response, self.project.get_absolute_url())
 
-    def test_other_user_gets_404_on_browser_preview(self):
-        response = self.other_client.get(
+    def test_browser_preview_is_public(self):
+        response = self.client.get(
             reverse("project-browser-preview", kwargs={"slug": self.project.slug})
         )
-        self.assertEqual(response.status_code, 404)
-
-    def test_dashboard_shows_only_own_projects(self):
-        PrototypeProject.objects.create(name="Other Project", created_by=self.other)
-        response = self.owner_client.get(reverse("dashboard"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["projects"]), 1)
-        self.assertEqual(response.context["projects"][0].pk, self.project.pk)
 
-    def test_other_user_gets_404_on_download_artifact(self):
+    def test_dashboard_shows_all_projects(self):
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["projects"]), 2)
+        self.assertEqual(
+            {project.pk for project in response.context["projects"]},
+            {self.project.pk, self.other_project.pk},
+        )
+
+    def test_download_artifact_is_public(self):
         from .models import GeneratedArtifact
 
         artifact = GeneratedArtifact.objects.create(
@@ -504,7 +511,12 @@ class AuthorizationTests(TestCase):
             artifact_type="zip",
             relative_path="test/archive.zip",
         )
-        response = self.other_client.get(
+        generated_root = Path(settings.GENERATED_ROOT)
+        artifact_path = generated_root / artifact.relative_path
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
+        artifact_path.write_bytes(b"demo")
+
+        response = self.client.get(
             reverse("artifact-download", kwargs={"artifact_id": artifact.pk})
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
