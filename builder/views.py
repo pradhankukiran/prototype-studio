@@ -42,6 +42,11 @@ RAILWAY_RUNTIME_UNAVAILABLE_MESSAGE = (
     "and run the exported Streamlit app locally."
 )
 
+BROWSER_PREVIEW_MESSAGE = (
+    "Browser prototype runs fully in this browser. Prototype data persists in "
+    "this browser only."
+)
+
 
 def _parse_int(value: str | None) -> int | None:
     if not value:
@@ -203,7 +208,17 @@ def _project_detail_context(
             else reverse("screen-add", kwargs={"slug": project.slug})
         ),
         "screen_edit_target": screen_edit_target,
+        **_browser_preview_context(project),
         **_prototype_runtime_context(project, request),
+    }
+
+
+def _browser_preview_context(project: PrototypeProject) -> dict:
+    return {
+        "browser_preview_url": reverse(
+            "project-browser-preview", kwargs={"slug": project.slug}
+        ),
+        "browser_preview_message": BROWSER_PREVIEW_MESSAGE,
     }
 
 
@@ -694,10 +709,26 @@ def project_preview(request: HttpRequest, slug: str) -> HttpResponse:
         {
             "project": project,
             "spec": spec,
+            **_browser_preview_context(project),
             **_prototype_runtime_context(project, request),
             **preview_context,
         },
     )
+
+
+@login_required
+def project_browser_preview(request: HttpRequest, slug: str) -> HttpResponse:
+    project = get_project_for_user(request, slug)
+    generate_streamlit_artifacts(project)
+    preview_path = project.generated_dir / "browser_preview.html"
+    if not preview_path.exists():
+        raise Http404("Browser preview is unavailable.")
+    response = HttpResponse(
+        preview_path.read_text(encoding="utf-8"),
+        content_type="text/html; charset=utf-8",
+    )
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 @login_required

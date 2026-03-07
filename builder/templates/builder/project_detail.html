@@ -30,6 +30,8 @@
                 {% csrf_token %}
                 <button class="primary-button" type="submit" data-loading-text="Starting...">{% if prototype_runtime %}Restart prototype{% else %}Run prototype{% endif %}</button>
             </form>
+        {% else %}
+            <a class="primary-button" href="{{ browser_preview_url }}" target="_blank" rel="noreferrer">Open browser prototype</a>
         {% endif %}
         {% if prototype_runtime %}
             <a class="ghost-button" href="{{ prototype_runtime.url }}" target="_blank" rel="noreferrer">Open prototype</a>
@@ -235,9 +237,10 @@
             {% if not prototype_runtime_supported %}
                 <div class="runtime-stack">
                     <div class="token-row">
-                        <span class="token">Unavailable</span>
+                        <span class="token token-positive">Browser preview</span>
                     </div>
-                    <p class="muted-copy">{{ prototype_runtime_unavailable_reason }}</p>
+                    <p class="muted-copy">{{ browser_preview_message }}</p>
+                    <a class="primary-button" href="{{ browser_preview_url }}" target="_blank" rel="noreferrer">Open browser prototype</a>
                 </div>
             {% elif prototype_runtime %}
                 <div class="runtime-stack">

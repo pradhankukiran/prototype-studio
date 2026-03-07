@@ -130,16 +130,27 @@ class GeneratorTests(TestCase):
                     for artifact in artifacts
                     if artifact.artifact_type == "app"
                 )
+                browser_artifact = next(
+                    artifact
+                    for artifact in artifacts
+                    if artifact.artifact_type == "preview"
+                )
                 app_source = (Path(temp_dir) / app_artifact.relative_path).read_text(
                     encoding="utf-8"
                 )
+                browser_source = (
+                    Path(temp_dir) / browser_artifact.relative_path
+                ).read_text(encoding="utf-8")
 
-        self.assertEqual(len(artifacts), 6)
+        self.assertEqual(len(artifacts), 7)
         artifact_types = {artifact.artifact_type for artifact in artifacts}
         self.assertEqual(
-            artifact_types, {"app", "spec", "readme", "requirements", "config", "zip"}
+            artifact_types,
+            {"app", "spec", "preview", "readme", "requirements", "config", "zip"},
         )
         compile(app_source, str(Path(temp_dir) / app_artifact.relative_path), "exec")
+        self.assertIn("@stlite/browser@1.2.0", browser_source)
+        self.assertIn("idbfsMountpoints", browser_source)
 
 
 class RuleExpressionTests(TestCase):
@@ -399,10 +410,7 @@ class BuilderWorkflowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Run prototype")
-        self.assertContains(
-            response,
-            "Live prototype preview is unavailable on Railway.",
-        )
+        self.assertContains(response, "Open browser prototype")
 
     @patch("builder.views.start_project_runtime")
     @patch.dict("os.environ", {"RAILWAY_ENVIRONMENT": "production"}, clear=False)
@@ -418,6 +426,16 @@ class BuilderWorkflowTests(TestCase):
             "Live prototype preview is unavailable on Railway.",
         )
         mock_start_runtime.assert_not_called()
+
+    def test_project_browser_preview_returns_stlite_html(self):
+        response = self.client.get(
+            reverse("project-browser-preview", kwargs={"slug": self.project.slug})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "@stlite/browser@1.2.0")
+        self.assertNotContains(response, "Open browser prototype")
+        self.assertContains(response, "Runs fully in this browser.")
 
 
 class AuthorizationTests(TestCase):
@@ -460,6 +478,12 @@ class AuthorizationTests(TestCase):
     def test_other_user_gets_404_on_generate(self):
         response = self.other_client.post(
             reverse("project-generate", kwargs={"slug": self.project.slug})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_other_user_gets_404_on_browser_preview(self):
+        response = self.other_client.get(
+            reverse("project-browser-preview", kwargs={"slug": self.project.slug})
         )
         self.assertEqual(response.status_code, 404)
 

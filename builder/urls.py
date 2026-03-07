@@ -22,6 +22,11 @@ urlpatterns = [
         views.generate_project,
         name="project-generate",
     ),
+    path(
+        "projects/<slug:slug>/browser-preview/",
+        views.project_browser_preview,
+        name="project-browser-preview",
+    ),
     path("projects/<slug:slug>/run/", views.run_project, name="project-run"),
     path("projects/<slug:slug>/stop/", views.stop_project, name="project-stop"),
     path("projects/<slug:slug>/entities/add/", views.add_entity, name="entity-add"),

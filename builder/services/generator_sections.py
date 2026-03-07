@@ -25,13 +25,24 @@ def section_imports() -> str:
         import streamlit as st""")
 
 
-def section_constants(spec: dict, theme: dict, profile: dict) -> str:
+def section_constants(
+    spec: dict,
+    theme: dict,
+    profile: dict,
+    *,
+    db_path_expression: str | None = None,
+) -> str:
     spec_json = json.dumps(spec, indent=2)
     theme_json = json.dumps(theme, indent=2)
     profile_json = json.dumps(profile, indent=2)
+    db_path_line = (
+        f"DB_PATH = {db_path_expression}"
+        if db_path_expression
+        else 'DB_PATH = APP_DIR / "prototype.db"'
+    )
     return textwrap.dedent(f"""\
         APP_DIR = Path(__file__).resolve().parent
-        DB_PATH = APP_DIR / "prototype.db"
+        {db_path_line}
         SPEC = json.loads({repr(spec_json)})
         THEME = json.loads({repr(theme_json)})
         PROFILE = json.loads({repr(profile_json)})""")
