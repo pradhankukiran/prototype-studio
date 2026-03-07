@@ -25,10 +25,12 @@
             {% csrf_token %}
             <button class="primary-button" type="submit" data-loading-text="Generating...">Generate Streamlit package</button>
         </form>
-        <form action="{% url 'project-run' project.slug %}" method="post">
-            {% csrf_token %}
-            <button class="primary-button" type="submit" data-loading-text="Starting...">{% if prototype_runtime %}Restart prototype{% else %}Run prototype{% endif %}</button>
-        </form>
+        {% if prototype_runtime_supported %}
+            <form action="{% url 'project-run' project.slug %}" method="post">
+                {% csrf_token %}
+                <button class="primary-button" type="submit" data-loading-text="Starting...">{% if prototype_runtime %}Restart prototype{% else %}Run prototype{% endif %}</button>
+            </form>
+        {% endif %}
         {% if prototype_runtime %}
             <a class="ghost-button" href="{{ prototype_runtime.url }}" target="_blank" rel="noreferrer">Open prototype</a>
             <form action="{% url 'project-stop' project.slug %}" method="post">
@@ -230,7 +232,14 @@
                 <h2>Live prototype</h2>
                 <p>Run the latest generated Streamlit app directly from this workspace.</p>
             </div>
-            {% if prototype_runtime %}
+            {% if not prototype_runtime_supported %}
+                <div class="runtime-stack">
+                    <div class="token-row">
+                        <span class="token">Unavailable</span>
+                    </div>
+                    <p class="muted-copy">{{ prototype_runtime_unavailable_reason }}</p>
+                </div>
+            {% elif prototype_runtime %}
                 <div class="runtime-stack">
                     <div class="token-row">
                         <span class="token token-positive">Running</span>

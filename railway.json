@@ -2,7 +2,8 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {},
   "deploy": {
-    "startCommand": "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 3",
+    "preDeployCommand": "python manage.py migrate --noinput",
+    "startCommand": "sh -c 'gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --access-logfile - --error-logfile -'",
     "healthcheckPath": "/health/",
     "healthcheckTimeout": 120
   }

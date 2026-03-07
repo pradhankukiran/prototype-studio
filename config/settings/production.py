@@ -33,10 +33,12 @@ if RAILWAY_PUBLIC_DOMAIN:
 if RAILWAY_PRIVATE_DOMAIN:
     ALLOWED_HOSTS.append(RAILWAY_PRIVATE_DOMAIN)  # noqa: F405
 if os.environ.get("RAILWAY_ENVIRONMENT"):
-    ALLOWED_HOSTS.append(".railway.internal")  # noqa: F405
+    # Railway healthchecks use this host header, so production must accept it.
+    ALLOWED_HOSTS.extend([".railway.internal", "healthcheck.railway.app"])  # noqa: F405
 
 # Security headers
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "true").lower() == "true"
+SECURE_REDIRECT_EXEMPT = [r"^health/$"]
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True

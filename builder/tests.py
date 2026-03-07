@@ -391,6 +391,34 @@ class BuilderWorkflowTests(TestCase):
         self.assertContains(response, "Open prototype")
         self.assertContains(response, "http://127.0.0.1:8751")
 
+    @patch.dict("os.environ", {"RAILWAY_ENVIRONMENT": "production"}, clear=False)
+    def test_project_detail_hides_runtime_controls_on_railway(self):
+        response = self.client.get(
+            reverse("project-detail", kwargs={"slug": self.project.slug})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Run prototype")
+        self.assertContains(
+            response,
+            "Live prototype preview is unavailable on Railway.",
+        )
+
+    @patch("builder.views.start_project_runtime")
+    @patch.dict("os.environ", {"RAILWAY_ENVIRONMENT": "production"}, clear=False)
+    def test_run_project_is_blocked_on_railway(self, mock_start_runtime):
+        response = self.client.post(
+            reverse("project-run", kwargs={"slug": self.project.slug}),
+            follow=True,
+        )
+
+        self.assertRedirects(response, self.project.get_absolute_url())
+        self.assertContains(
+            response,
+            "Live prototype preview is unavailable on Railway.",
+        )
+        mock_start_runtime.assert_not_called()
+
 
 class AuthorizationTests(TestCase):
     def setUp(self):

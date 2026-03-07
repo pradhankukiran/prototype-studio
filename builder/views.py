@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from django.conf import settings
@@ -34,6 +35,12 @@ from .services.runtime import (
     stop_project_runtime,
 )
 from .services.templates import seed_project_from_template
+
+
+RAILWAY_RUNTIME_UNAVAILABLE_MESSAGE = (
+    "Live prototype preview is unavailable on Railway. Generate the package here "
+    "and run the exported Streamlit app locally."
+)
 
 
 def _parse_int(value: str | None) -> int | None:
@@ -201,9 +208,19 @@ def _project_detail_context(
 
 
 def _prototype_runtime_context(project: PrototypeProject, request: HttpRequest) -> dict:
+    if os.environ.get("RAILWAY_ENVIRONMENT"):
+        return {
+            "prototype_runtime": None,
+            "prototype_runtime_supported": False,
+            "prototype_runtime_unavailable_reason": RAILWAY_RUNTIME_UNAVAILABLE_MESSAGE,
+        }
     runtime = get_project_runtime(project)
     if not runtime:
-        return {"prototype_runtime": None}
+        return {
+            "prototype_runtime": None,
+            "prototype_runtime_supported": True,
+            "prototype_runtime_unavailable_reason": "",
+        }
     host = request.get_host().split(":", 1)[0]
     if host == "testserver":
         host = "127.0.0.1"
@@ -211,7 +228,9 @@ def _prototype_runtime_context(project: PrototypeProject, request: HttpRequest) 
         "prototype_runtime": {
             **runtime,
             "url": f"http://{host}:{runtime['port']}",
-        }
+        },
+        "prototype_runtime_supported": True,
+        "prototype_runtime_unavailable_reason": "",
     }
 
 
@@ -695,6 +714,9 @@ def generate_project(request: HttpRequest, slug: str) -> HttpResponse:
 def run_project(request: HttpRequest, slug: str) -> HttpResponse:
     project = get_project_for_user(request, slug)
     if request.method != "POST":
+        return redirect(project)
+    if os.environ.get("RAILWAY_ENVIRONMENT"):
+        messages.info(request, RAILWAY_RUNTIME_UNAVAILABLE_MESSAGE)
         return redirect(project)
     try:
         runtime = start_project_runtime(project)
