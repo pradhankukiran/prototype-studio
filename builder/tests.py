@@ -149,6 +149,8 @@ class GeneratorTests(TestCase):
             {"app", "spec", "preview", "readme", "requirements", "config", "zip"},
         )
         compile(app_source, str(Path(temp_dir) / app_artifact.relative_path), "exec")
+        self.assertIn("except ModuleNotFoundError", app_source)
+        self.assertIn("_memory_rows", app_source)
         self.assertIn("@stlite/browser@1.2.0", browser_source)
         self.assertNotIn("idbfsMountpoints", browser_source)
 

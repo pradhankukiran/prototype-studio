@@ -18,9 +18,24 @@ def section_imports() -> str:
         import io
         import json
         import operator
-        import sqlite3
         from datetime import date, timedelta
         from pathlib import Path
+
+        SQLITE_AVAILABLE = True
+        try:
+            import sqlite3
+        except ModuleNotFoundError:
+            SQLITE_AVAILABLE = False
+
+            class _SQLiteCompatibility:
+                Row = dict
+                Connection = object
+
+                @staticmethod
+                def connect(*args, **kwargs):
+                    raise RuntimeError("sqlite3 is unavailable in this runtime.")
+
+            sqlite3 = _SQLiteCompatibility()
 
         import streamlit as st""")
 
@@ -56,6 +71,30 @@ def section_database() -> str:
             return connection
 
 
+        def _memory_rows() -> dict[str, list[dict]]:
+            store_key = f'_prototype_rows_{SPEC["slug"]}'
+            if store_key not in st.session_state:
+                st.session_state[store_key] = {}
+            return st.session_state[store_key]
+
+
+        def _memory_sequences() -> dict[str, int]:
+            sequence_key = f'_prototype_sequences_{SPEC["slug"]}'
+            if sequence_key not in st.session_state:
+                st.session_state[sequence_key] = {}
+            return st.session_state[sequence_key]
+
+
+        def _memory_sort_value(value):
+            if value in (None, ""):
+                return (2, "")
+            if isinstance(value, bool):
+                return (1, int(value))
+            if isinstance(value, (int, float)):
+                return (0, float(value))
+            return (0, str(value).casefold())
+
+
         def sql_type(field: dict) -> str:
             mapping = {
                 "short_text": "TEXT",
@@ -82,6 +121,13 @@ def section_database() -> str:
 
 
         def ensure_database() -> None:
+            if not SQLITE_AVAILABLE:
+                rows = _memory_rows()
+                sequences = _memory_sequences()
+                for entity in SPEC["entities"]:
+                    rows.setdefault(entity["slug"], [])
+                    sequences.setdefault(entity["slug"], 1)
+                return
             with get_connection() as connection:
                 for entity in SPEC["entities"]:
                     columns = ['id INTEGER PRIMARY KEY AUTOINCREMENT']
@@ -293,11 +339,25 @@ def section_helpers() -> str:
 
 
         def fetch_records(entity: dict) -> list[sqlite3.Row]:
-            order_column = "id DESC"
+            order_field = None
             for field in entity["fields"]:
                 if field.get("include_in_list"):
-                    order_column = f'"{field["name"]}" COLLATE NOCASE ASC, id DESC'
+                    order_field = field["name"]
                     break
+            if not SQLITE_AVAILABLE:
+                rows = list(_memory_rows().get(entity["slug"], []))
+                if order_field:
+                    return sorted(
+                        rows,
+                        key=lambda row: (
+                            _memory_sort_value(row.get(order_field)),
+                            -int(row["id"]),
+                        ),
+                    )
+                return sorted(rows, key=lambda row: -int(row["id"]))
+            order_column = "id DESC"
+            if order_field:
+                order_column = f'"{order_field}" COLLATE NOCASE ASC, id DESC'
             with get_connection() as connection:
                 return list(connection.execute(f'SELECT * FROM "{entity["slug"]}" ORDER BY {order_column}'))
 
@@ -372,6 +432,18 @@ def section_helpers() -> str:
 
 
         def insert_record(entity: dict, values: dict) -> None:
+            if not SQLITE_AVAILABLE:
+                rows = _memory_rows().setdefault(entity["slug"], [])
+                sequences = _memory_sequences()
+                record_id = sequences.get(entity["slug"], 1)
+                sequences[entity["slug"]] = record_id + 1
+                row = {"id": record_id}
+                if workflow_enabled():
+                    row["workflow_state"] = values.get("workflow_state", default_state())
+                for field in entity["fields"]:
+                    row[field["name"]] = values.get(field["name"])
+                rows.append(row)
+                return
             columns = []
             placeholders = []
             params = []
@@ -392,6 +464,16 @@ def section_helpers() -> str:
 
 
         def update_record(entity: dict, record_id: int, values: dict) -> None:
+            if not SQLITE_AVAILABLE:
+                rows = _memory_rows().get(entity["slug"], [])
+                selected = next((row for row in rows if row["id"] == record_id), None)
+                if selected is None:
+                    return
+                if workflow_enabled():
+                    selected["workflow_state"] = values.get("workflow_state", default_state())
+                for field in entity["fields"]:
+                    selected[field["name"]] = values.get(field["name"])
+                return
             assignments = []
             params = []
             if workflow_enabled():
