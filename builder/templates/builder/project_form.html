@@ -1,0 +1,66 @@
+{% extends 'builder/base.html' %}
+
+{% block title %}New Project | Prototype Studio{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <ol class="breadcrumb-list">
+        <li><a href="{% url 'dashboard' %}">Library</a></li>
+        <li><span aria-current="page">New workspace</span></li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<section class="page-header page-header-split">
+    <div>
+        <p class="eyebrow">New workspace</p>
+        <h1>Create a prototype project</h1>
+        <p class="lead-copy">
+            Pick a starting point, save the operating model, and iterate inside one workspace.
+        </p>
+    </div>
+</section>
+
+<section class="split-grid">
+    <article class="panel-card">
+        <div class="section-heading">
+            <h2>Project details</h2>
+            <p>Name the workspace after the operational problem, not the technology.</p>
+        </div>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {% include 'builder/_form_fields.html' with form=form %}
+            <button class="primary-button" type="submit">Create project</button>
+        </form>
+    </article>
+    <article class="panel-card">
+        <div class="section-heading">
+            <h2>Template guidance</h2>
+            <p>Templates seed enough structure to critique the flow instead of building from zero.</p>
+        </div>
+        <div class="template-note-list">
+            <div class="template-note">
+                <strong>Blank workspace</strong>
+                <p>Start with no assumptions when the domain model is still open.</p>
+            </div>
+            <div class="template-note">
+                <strong>Quote builder</strong>
+                <p>Seeded around pricing, approvals, and exportable documents.</p>
+            </div>
+            <div class="template-note">
+                <strong>CRM</strong>
+                <p>Useful for people, accounts, and pipeline-centric workflows.</p>
+            </div>
+            <div class="template-note">
+                <strong>Approval workflow</strong>
+                <p>Focused on requests, reviews, and decision history.</p>
+            </div>
+            <div class="template-note">
+                <strong>Case tracker</strong>
+                <p>Designed for issue records, activities, and operational follow-through.</p>
+            </div>
+        </div>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends 'builder/base.html' %}
+
+{% block title %}{{ project.name }} Preview | Prototype Studio{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <ol class="breadcrumb-list">
+        <li><a href="{% url 'dashboard' %}">Library</a></li>
+        <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+        <li><span aria-current="page">Preview</span></li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<section class="page-header page-header-split">
+    <div>
+        <p class="eyebrow">Prototype preview</p>
+        <h1>{{ project.name }}</h1>
+        <p class="lead-copy">Preview the generated navigation and screen structure before exporting the Streamlit bundle.</p>
+    </div>
+    <div class="page-header-actions">
+        <a class="ghost-button" href="{{ project.get_absolute_url }}">Back to workspace</a>
+        <form action="{% url 'project-generate' project.slug %}" method="post">
+            {% csrf_token %}
+            <button class="primary-button" type="submit" data-loading-text="Generating...">Generate package</button>
+        </form>
+        <form action="{% url 'project-run' project.slug %}" method="post">
+            {% csrf_token %}
+            <button class="primary-button" type="submit" data-loading-text="Starting...">{% if prototype_runtime %}Restart prototype{% else %}Run prototype{% endif %}</button>
+        </form>
+        {% if prototype_runtime %}
+            <a class="ghost-button" href="{{ prototype_runtime.url }}" target="_blank" rel="noreferrer">Open prototype</a>
+            <form action="{% url 'project-stop' project.slug %}" method="post">
+                {% csrf_token %}
+                <button class="ghost-button" type="submit" data-loading-text="Stopping...">Stop prototype</button>
+            </form>
+        {% endif %}
+    </div>
+</section>
+
+<section class="workspace-grid">
+    <div class="panel-stack">
+        <article class="panel-card">
+            <div class="section-heading section-heading-inline">
+                <div>
+                    <h2>
+                        {% if selected_screen %}
+                            {{ selected_screen.title }}
+                        {% else %}
+                            No previewable screen yet
+                        {% endif %}
+                    </h2>
+                    <p>
+                        {% if selected_screen %}
+                            {{ selected_screen.screen_type|title }} preview{% if selected_screen.entity %} for {{ selected_screen.entity|title }}{% endif %}
+                        {% else %}
+                            Add a screen in the workspace to preview a generated view.
+                        {% endif %}
+                    </p>
+                </div>
+                {% if selected_screen %}
+                    <span class="metric-inline">{{ selected_screen.screen_type|title }}</span>
+                {% endif %}
+            </div>
+
+            {% if preview.mode == 'dashboard' %}
+                <div class="preview-stat-grid">
+                    {% for card in preview.entity_cards %}
+                        <div class="preview-stat-card">
+                            <span>{{ card.title }}</span>
+                            <strong>{{ card.value }}</strong>
+                            <p>{{ card.meta }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if preview.workflow_states %}
+                    <div class="preview-flow">
+                        {% for state in preview.workflow_states %}
+                            <span class="token{% if state.is_initial %} token-positive{% elif state.is_terminal %} token-warn{% endif %}">{{ state.name }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% elif preview.mode == 'list' %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for column in preview.columns %}
+                                    <th scope="col">{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in preview.rows %}
+                                <tr>
+                                    {% for value in row.values %}
+                                        <td>{{ value }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% elif preview.mode == 'form' %}
+                {% if preview.workflow_states %}
+                    <div class="preview-flow">
+                        {% for state in preview.workflow_states %}
+                            <span class="token{% if state.is_initial %} token-positive{% elif state.is_terminal %} token-warn{% endif %}">{{ state.name }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="preview-form-grid">
+                    {% for field in preview.fields %}
+                        <div class="preview-field">
+                            <div class="preview-field-head">
+                                <strong>{{ field.label }}</strong>
+                                <div class="token-row">
+                                    <span class="token">{{ field.type_label }}</span>
+                                    {% for token in field.rule_tokens %}
+                                        <span class="token{% if token.tone == 'positive' %} token-positive{% elif token.tone == 'warn' %} token-warn{% endif %}">{{ token.label }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="preview-input">
+                                {% if field.sample_visible %}
+                                    {{ field.placeholder }}
+                                {% else %}
+                                    Hidden until the visibility rule evaluates true.
+                                {% endif %}
+                            </div>
+                            {% if field.help_text %}
+                                <p class="field-help">{{ field.help_text }}</p>
+                            {% endif %}
+                            {% if field.calculation_expression %}
+                                <p class="table-subcopy">{{ field.calculation_expression }}</p>
+                            {% endif %}
+                            {% if field.visibility_condition %}
+                                <p class="table-subcopy">{{ field.visibility_condition }}</p>
+                            {% endif %}
+                            {% if field.validation_expression %}
+                                <p class="table-subcopy">{{ field.validation_expression }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif preview.mode == 'detail' %}
+                {% if preview.workflow_state %}
+                    <div class="preview-flow">
+                        <span class="token token-positive">{{ preview.workflow_state }}</span>
+                    </div>
+                {% endif %}
+                <div class="detail-grid">
+                    {% for field in preview.fields %}
+                        <div class="detail-item">
+                            <span class="cell-label">{{ field.label }}</span>
+                            <strong>{{ field.value }}</strong>
+                            {% if field.rule_tokens %}
+                                <div class="token-row">
+                                    {% for token in field.rule_tokens %}
+                                        <span class="token{% if token.tone == 'positive' %} token-positive{% elif token.tone == 'warn' %} token-warn{% endif %}">{{ token.label }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>No screen selected</h3>
+                    <p>Define screens in the workspace, then preview them here.</p>
+                </div>
+            {% endif %}
+        </article>
+    </div>
+
+    <aside class="sidebar-stack">
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>Navigation</h2>
+                <p>Switch between the generated screens to inspect the structure.</p>
+            </div>
+            <div class="preview-nav">
+                {% for screen in screens %}
+                    <a class="preview-nav-link{% if selected_screen and selected_screen.slug == screen.slug %} is-active{% endif %}" href="{% url 'project-preview' project.slug %}?screen={{ screen.slug }}">
+                        <strong>{{ screen.title }}</strong>
+                        <span>{{ screen.screen_type|title }}</span>
+                    </a>
+                {% empty %}
+                    <p class="muted-copy">No screens defined yet. Add screens in the workspace first.</p>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>Spec summary</h2>
+                <p>Quick read on the generated structure.</p>
+            </div>
+            <div class="token-row">
+                <span class="token">{{ spec.entities|length }} entities</span>
+                <span class="token">{{ spec.screens|length }} screens</span>
+                <span class="token">{{ spec.workflow_states|length }} states</span>
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>Live runtime</h2>
+                <p>Launch the generated Streamlit app from this preview page.</p>
+            </div>
+            {% if prototype_runtime %}
+                <div class="runtime-stack">
+                    <div class="token-row">
+                        <span class="token token-positive">Running</span>
+                        <span class="token">Port {{ prototype_runtime.port }}</span>
+                    </div>
+                    <a class="ghost-button" href="{{ prototype_runtime.url }}" target="_blank" rel="noreferrer">Open prototype</a>
+                </div>
+            {% else %}
+                <div class="runtime-stack">
+                    <span class="token">Not running</span>
+                </div>
+            {% endif %}
+        </article>
+    </aside>
+</section>
+{% endblock %}

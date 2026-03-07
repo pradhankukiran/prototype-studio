@@ -1,0 +1,34 @@
+[project]
+name = "prototype-studio"
+version = "0.1.0"
+description = "Django studio for defining business-tool specs and generating Streamlit prototypes."
+readme = "README.md"
+authors = [
+    { name = "KIRAN", email = "pradhankukiran@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0.3,<6.1",
+    "gunicorn>=23.0",
+    "whitenoise>=6.8",
+    "psycopg[binary]>=3.2",
+    "dj-database-url>=3.1.2",
+]
+
+[project.scripts]
+prototype-studio = "prototype_studio:main"
+
+[build-system]
+requires = ["uv_build>=0.9.21,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-django>=4.12.0",
+    "ruff>=0.9",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]

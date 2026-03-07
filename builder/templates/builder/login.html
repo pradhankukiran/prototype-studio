@@ -1,0 +1,30 @@
+{% extends 'builder/base.html' %}
+
+{% block title %}Sign In | Prototype Studio{% endblock %}
+
+{% block content %}
+<section class="auth-grid">
+    <article class="auth-aside">
+        <p class="eyebrow">Prototype Studio</p>
+        <h1>Build cleaner internal prototypes.</h1>
+        <p class="lead-copy">
+            Keep schema, workflow, and navigation in one disciplined workspace before the app turns into a production build.
+        </p>
+        <ul class="feature-list">
+            <li>Model entities and field types without touching prototype code.</li>
+            <li>Export a consistent Streamlit package for review and validation.</li>
+            <li>Keep design intent visible as the app moves toward production.</li>
+        </ul>
+    </article>
+    <article class="auth-card">
+        <p class="eyebrow">Account access</p>
+        <h2>Sign in</h2>
+        <p class="muted-copy">Use your Django account to manage project specs and exports.</p>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {% include 'builder/_form_fields.html' with form=form %}
+            <button class="primary-button" type="submit">Sign in</button>
+        </form>
+    </article>
+</section>
+{% endblock %}

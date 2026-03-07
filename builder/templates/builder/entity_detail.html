@@ -1,0 +1,392 @@
+{% extends 'builder/base.html' %}
+{% load static %}
+
+{% block title %}{{ entity.name }} | Prototype Studio{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <ol class="breadcrumb-list">
+        <li><a href="{% url 'dashboard' %}">Library</a></li>
+        <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+        <li><span aria-current="page">{{ entity.name }}</span></li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<section class="page-header page-header-split">
+    <div>
+        <p class="eyebrow">Entity editor / {{ project.name }}</p>
+        <h1>{{ entity.name }}</h1>
+        <p class="lead-copy">{{ entity.description|default:'Define the fields that should appear in the generated Streamlit forms and record tables.' }}</p>
+        <div class="token-row">
+            <span class="token">{{ entity.field_count }} fields</span>
+            <span class="token">{{ entity.screen_count }} linked screens</span>
+            <span class="token">{{ entity.slug }}</span>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a class="ghost-button" href="{{ project.get_absolute_url }}">Back to workspace</a>
+        <a class="ghost-button" href="{% url 'project-preview' project.slug %}">Preview structure</a>
+    </div>
+</section>
+
+<section class="workspace-grid">
+    <div class="panel-stack">
+        <article class="panel-card">
+            <div class="section-heading section-heading-inline">
+                <div>
+                    <h2>Field map</h2>
+                    <p>Internal names stay close to the schema. Labels reflect the operator-facing prototype.</p>
+                </div>
+                <span class="metric-inline">{{ entity.field_count }} fields</span>
+            </div>
+            <div class="table-wrap">
+                <table class="schema-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Field</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Rules</th>
+                            <th scope="col">Visibility</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in entity.fields.all %}
+                            <tr>
+                                <td data-label="Field">
+                                    <strong>{{ field.label }}</strong>
+                                    <p class="field-token">{{ field.name }}</p>
+                                    {% if field.help_text %}
+                                        <p class="table-subcopy">{{ field.help_text }}</p>
+                                    {% endif %}
+                                </td>
+                                <td data-label="Type">{{ field.get_field_type_display }}</td>
+                                <td data-label="Rules">
+                                    <div class="token-row">
+                                        {% if field.required %}
+                                            <span class="token token-positive">Required</span>
+                                        {% else %}
+                                            <span class="token">Optional</span>
+                                        {% endif %}
+                                        {% if field.is_calculated %}
+                                            <span class="token token-positive">Calculated</span>
+                                        {% endif %}
+                                        {% if field.validation_expression %}
+                                            <span class="token token-warn">Validated</span>
+                                        {% endif %}
+                                        {% if field.related_entity %}
+                                            <span class="token">{{ field.related_entity.name }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if field.calculation_expression %}
+                                        <p class="table-subcopy">{{ field.calculation_expression }}</p>
+                                    {% endif %}
+                                    {% if field.validation_expression %}
+                                        <p class="table-subcopy">{{ field.validation_expression }}</p>
+                                    {% endif %}
+                                </td>
+                                <td data-label="Visibility">
+                                    <div class="token-row">
+                                        {% if field.include_in_list %}
+                                            <span class="token token-positive">List view</span>
+                                        {% else %}
+                                            <span class="token">Form only</span>
+                                        {% endif %}
+                                        {% if field.visibility_condition %}
+                                            <span class="token token-warn">Conditional</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if field.visibility_condition %}
+                                        <p class="table-subcopy">{{ field.visibility_condition }}</p>
+                                    {% endif %}
+                                </td>
+                                <td data-label="Actions">
+                                    <div class="table-actions">
+                                        <a class="control-button" href="{{ entity.get_absolute_url }}?edit_field={{ field.pk }}">Edit</a>
+                                        <form class="control-form" method="post" action="{% url 'field-move' project.slug entity.slug field.pk 'up' %}">
+                                            {% csrf_token %}
+                                            <button class="control-button" type="submit"{% if forloop.first %} disabled{% endif %} aria-label="Move {{ field.label }} up">Up</button>
+                                        </form>
+                                        <form class="control-form" method="post" action="{% url 'field-move' project.slug entity.slug field.pk 'down' %}">
+                                            {% csrf_token %}
+                                            <button class="control-button" type="submit"{% if forloop.last %} disabled{% endif %} aria-label="Move {{ field.label }} down">Down</button>
+                                        </form>
+                                        <form class="control-form" method="post" action="{% url 'field-delete' project.slug entity.slug field.pk %}" data-confirm="Delete field {{ field.label }}? This cannot be undone.">
+                                            {% csrf_token %}
+                                            <button class="control-button control-button-danger" type="submit" aria-label="Delete {{ field.label }}">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <h3>No fields defined yet</h3>
+                                        <p>Use the field form in the sidebar to add fields to this entity.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+
+    <aside class="sidebar-stack">
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>Field design notes</h2>
+                <p>Build the operator-facing input first, then add logic only where it reduces manual work.</p>
+            </div>
+            <div class="token-row">
+                <span class="token">Stable internal names</span>
+                <span class="token">Typed inputs</span>
+                <span class="token">Low-friction rules</span>
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>{% if field_edit_target %}Edit field{% else %}Add field{% endif %}</h2>
+                <p>Common rules can be composed visually. Raw expressions stay available for edge cases.</p>
+            </div>
+            <form method="post" action="{{ field_form_action }}" class="stack-form field-editor-form" data-rule-builder>
+                {% csrf_token %}
+                {% if field_form.non_field_errors %}
+                    <div class="field-errors field-errors-block">{{ field_form.non_field_errors }}</div>
+                {% endif %}
+
+                <section class="editor-section">
+                    <div class="section-heading">
+                        <h3>Field basics</h3>
+                        <p>Name the field, pick the input type, and decide where it should appear.</p>
+                    </div>
+                    <div class="form-grid field-editor-grid">
+                        {% include 'builder/_form_field.html' with field=field_form.name %}
+                        {% include 'builder/_form_field.html' with field=field_form.label %}
+                        {% include 'builder/_form_field.html' with field=field_form.field_type %}
+                        {% include 'builder/_form_field.html' with field=field_form.required %}
+                        {% include 'builder/_form_field.html' with field=field_form.help_text extra_classes='form-row-wide' %}
+                        {% include 'builder/_form_field.html' with field=field_form.include_in_list %}
+                    </div>
+                </section>
+
+                <section class="editor-section">
+                    <div class="section-heading">
+                        <h3>Type-specific inputs</h3>
+                        <p>Only fill these when the field type needs predefined options or a linked record.</p>
+                    </div>
+                    <div class="form-grid field-editor-grid">
+                        {% include 'builder/_form_field.html' with field=field_form.choices_text extra_classes='form-row-wide' %}
+                        {% include 'builder/_form_field.html' with field=field_form.related_entity %}
+                    </div>
+                </section>
+
+                <section class="editor-section">
+                    <div class="section-heading">
+                        <h3>Rule builder</h3>
+                        <p>Use the structured controls for common calculations and comparisons. Open advanced mode if you need a custom expression.</p>
+                    </div>
+
+                    <div class="rule-workbench">
+                        <section class="rule-card">
+                            <div class="rule-card-head">
+                                <div>
+                                    <h3>Calculated value</h3>
+                                    <p>Good for totals, derived rates, and copied numeric values.</p>
+                                </div>
+                                <div class="rule-switch">
+                                    {{ field_form.is_calculated }}
+                                    <label for="{{ field_form.is_calculated.id_for_label }}">Enable calculated field</label>
+                                </div>
+                            </div>
+
+                            <div class="builder-grid">
+                                <div class="builder-control">
+                                    <label for="calc-left-field">Left side</label>
+                                    <select id="calc-left-field" class="form-input" data-calc-left></select>
+                                </div>
+                                <div class="builder-control builder-control-tight">
+                                    <label for="calc-operator">Operator</label>
+                                    <select id="calc-operator" class="form-input" data-calc-operator>
+                                        <option value="+">Add</option>
+                                        <option value="-">Subtract</option>
+                                        <option value="*">Multiply</option>
+                                        <option value="/">Divide</option>
+                                    </select>
+                                </div>
+                                <div class="builder-control builder-control-tight">
+                                    <label for="calc-right-mode">Right side</label>
+                                    <select id="calc-right-mode" class="form-input" data-calc-right-mode>
+                                        <option value="field">Another field</option>
+                                        <option value="literal">Fixed number</option>
+                                    </select>
+                                </div>
+                                <div class="builder-control" data-calc-right-field-wrap>
+                                    <label for="calc-right-field">Right field</label>
+                                    <select id="calc-right-field" class="form-input" data-calc-right-field></select>
+                                </div>
+                                <div class="builder-control" data-calc-right-value-wrap hidden>
+                                    <label for="calc-right-value">Fixed number</label>
+                                    <input id="calc-right-value" class="form-input" type="number" step="0.01" data-calc-right-value>
+                                </div>
+                            </div>
+
+                            <div class="builder-footer">
+                                <div class="builder-actions">
+                                    <button class="control-button" type="button" data-rule-apply="calculation">Use formula</button>
+                                    <button class="control-button" type="button" data-rule-clear="calculation">Clear</button>
+                                </div>
+                                <code class="rule-preview" data-rule-preview="calculation">No formula yet.</code>
+                            </div>
+
+                            <details class="advanced-rule"{% if field_form.calculation_expression.value or field_form.calculation_expression.errors or field_form.is_calculated.value %} open{% endif %}>
+                                <summary>Advanced expression</summary>
+                                {% include 'builder/_form_field.html' with field=field_form.calculation_expression extra_classes='form-row-wide' %}
+                            </details>
+                        </section>
+
+                        <section class="rule-card">
+                            <div class="rule-card-head">
+                                <div>
+                                    <h3>Conditional visibility</h3>
+                                    <p>Show the field only when another answer or value makes it relevant.</p>
+                                </div>
+                            </div>
+
+                            <div class="builder-grid">
+                                <div class="builder-control">
+                                    <label for="visibility-left-field">When this field</label>
+                                    <select id="visibility-left-field" class="form-input" data-compare-left="visibility"></select>
+                                </div>
+                                <div class="builder-control builder-control-tight">
+                                    <label for="visibility-operator">Comparator</label>
+                                    <select id="visibility-operator" class="form-input" data-compare-operator="visibility">
+                                        <option value="==">Equals</option>
+                                        <option value="!=">Does not equal</option>
+                                        <option value=">">Greater than</option>
+                                        <option value=">=">Greater or equal</option>
+                                        <option value="<">Less than</option>
+                                        <option value="<=">Less or equal</option>
+                                    </select>
+                                </div>
+                                <div class="builder-control builder-control-tight">
+                                    <label for="visibility-mode">Compare with</label>
+                                    <select id="visibility-mode" class="form-input" data-compare-mode="visibility">
+                                        <option value="literal">Fixed value</option>
+                                        <option value="field">Another field</option>
+                                    </select>
+                                </div>
+                                <div class="builder-control" data-compare-right-field-wrap="visibility" hidden>
+                                    <label for="visibility-right-field">Target field</label>
+                                    <select id="visibility-right-field" class="form-input" data-compare-right-field="visibility"></select>
+                                </div>
+                                <div class="builder-control" data-compare-literal-wrap="visibility">
+                                    <label for="visibility-literal">Fixed value</label>
+                                    <input id="visibility-literal" class="form-input" type="text" data-compare-literal="visibility">
+                                    <select id="visibility-choice" class="form-input" data-compare-choice="visibility" hidden></select>
+                                    <select id="visibility-bool" class="form-input" data-compare-bool="visibility" hidden>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="builder-footer">
+                                <div class="builder-actions">
+                                    <button class="control-button" type="button" data-rule-apply="visibility">Use condition</button>
+                                    <button class="control-button" type="button" data-rule-clear="visibility">Clear</button>
+                                </div>
+                                <code class="rule-preview" data-rule-preview="visibility">Always visible.</code>
+                            </div>
+
+                            <details class="advanced-rule"{% if field_form.visibility_condition.value or field_form.visibility_condition.errors %} open{% endif %}>
+                                <summary>Advanced expression</summary>
+                                {% include 'builder/_form_field.html' with field=field_form.visibility_condition extra_classes='form-row-wide' %}
+                            </details>
+                        </section>
+
+                        <section class="rule-card">
+                            <div class="rule-card-head">
+                                <div>
+                                    <h3>Validation check</h3>
+                                    <p>Compare the current field value against a threshold or another field.</p>
+                                </div>
+                                <div class="token-row">
+                                    <span class="token">Left side = <code>value</code></span>
+                                </div>
+                            </div>
+
+                            <div class="builder-grid">
+                                <div class="builder-control builder-control-tight">
+                                    <label for="validation-operator">Comparator</label>
+                                    <select id="validation-operator" class="form-input" data-compare-operator="validation">
+                                        <option value="==">Equals</option>
+                                        <option value="!=">Does not equal</option>
+                                        <option value=">">Greater than</option>
+                                        <option value=">=">Greater or equal</option>
+                                        <option value="<">Less than</option>
+                                        <option value="<=">Less or equal</option>
+                                    </select>
+                                </div>
+                                <div class="builder-control builder-control-tight">
+                                    <label for="validation-mode">Compare with</label>
+                                    <select id="validation-mode" class="form-input" data-compare-mode="validation">
+                                        <option value="literal">Fixed value</option>
+                                        <option value="field">Another field</option>
+                                    </select>
+                                </div>
+                                <div class="builder-control" data-compare-right-field-wrap="validation" hidden>
+                                    <label for="validation-right-field">Target field</label>
+                                    <select id="validation-right-field" class="form-input" data-compare-right-field="validation"></select>
+                                </div>
+                                <div class="builder-control" data-compare-literal-wrap="validation">
+                                    <label for="validation-literal">Fixed value</label>
+                                    <input id="validation-literal" class="form-input" type="text" data-compare-literal="validation">
+                                    <select id="validation-choice" class="form-input" data-compare-choice="validation" hidden></select>
+                                    <select id="validation-bool" class="form-input" data-compare-bool="validation" hidden>
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="builder-footer">
+                                <div class="builder-actions">
+                                    <button class="control-button" type="button" data-rule-apply="validation">Use validation</button>
+                                    <button class="control-button" type="button" data-rule-clear="validation">Clear</button>
+                                </div>
+                                <code class="rule-preview" data-rule-preview="validation">No validation yet.</code>
+                            </div>
+
+                            {% include 'builder/_form_field.html' with field=field_form.validation_message extra_classes='form-row-wide' %}
+
+                            <details class="advanced-rule"{% if field_form.validation_expression.value or field_form.validation_expression.errors or field_form.validation_message.value %} open{% endif %}>
+                                <summary>Advanced expression</summary>
+                                {% include 'builder/_form_field.html' with field=field_form.validation_expression extra_classes='form-row-wide' %}
+                            </details>
+                        </section>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <button class="primary-button" type="submit">{% if field_edit_target %}Update field{% else %}Save field{% endif %}</button>
+                    {% if field_edit_target %}
+                        <a class="ghost-button" href="{{ entity.get_absolute_url }}">Cancel</a>
+                    {% endif %}
+                </div>
+            </form>
+        </article>
+    </aside>
+</section>
+
+{{ rule_builder_config|json_script:"rule-builder-config" }}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'builder/rule-builder.js' %}"></script>
+{% endblock %}

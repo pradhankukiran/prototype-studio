@@ -1,0 +1,93 @@
+{% extends 'builder/base.html' %}
+
+{% block title %}Dashboard | Prototype Studio{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Studio</p>
+        <h1>Project library</h1>
+        <p class="lead-copy">
+            Manage application specs, track build readiness, and export Streamlit prototypes from one workspace.
+        </p>
+    </div>
+    <div class="page-header-actions">
+        <div class="kpi-strip">
+            <div class="mini-kpi">
+                <span>Workspaces</span>
+                <strong>{{ project_count }}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Exports</span>
+                <strong>{{ generated_count }}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Entities</span>
+                <strong>{{ entity_total }}</strong>
+            </div>
+        </div>
+        <a class="primary-button" href="{% url 'project-create' %}">New workspace</a>
+    </div>
+</section>
+
+<section class="panel-card">
+    <div class="section-heading">
+        <h2>Project library</h2>
+        <p>Each row shows structure, readiness, last activity, and export status.</p>
+    </div>
+    <div class="project-list">
+        {% for project in projects %}
+            <article class="project-row">
+                <div class="project-primary">
+                    <div class="project-title-row">
+                        <h3><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></h3>
+                        {% if project.status_label == 'Ready' %}
+                            <span class="status-badge status-badge-ready">{{ project.status_label }}</span>
+                        {% elif project.status_label == 'In build' %}
+                            <span class="status-badge status-badge-build">{{ project.status_label }}</span>
+                        {% else %}
+                            <span class="status-badge status-badge-draft">{{ project.status_label }}</span>
+                        {% endif %}
+                    </div>
+                    <p class="project-meta">{{ project.get_template_kind_display }}{% if project.description %} · {{ project.description|truncatechars:120 }}{% endif %}</p>
+                    <div class="token-row">
+                        {% for label, is_done in project.readiness_checks %}
+                            <span class="token{% if is_done %} token-positive{% endif %}">{{ label }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="project-cell">
+                    <span class="cell-label">Structure</span>
+                    <strong>{{ project.entities_count }} entities</strong>
+                    <p>{{ project.workflow_states_count }} states · {{ project.screens_count }} screens</p>
+                </div>
+                <div class="project-cell">
+                    <span class="cell-label">Readiness</span>
+                    <strong>{{ project.completion_percent }}%</strong>
+                    <div class="progress-track compact-track">
+                        <span style="width: {{ project.completion_percent }}%"></span>
+                    </div>
+                </div>
+                <div class="project-cell">
+                    <span class="cell-label">Activity</span>
+                    <strong>{{ project.updated_at|date:"M j, Y" }}</strong>
+                    {% if project.is_generated %}
+                        <p>Exported {{ project.latest_generation_at|date:"M j, g:i a" }}</p>
+                    {% else %}
+                        <p>No export generated yet</p>
+                    {% endif %}
+                </div>
+                <div class="project-action">
+                    <a class="ghost-button" href="{{ project.get_absolute_url }}">Open workspace</a>
+                </div>
+            </article>
+        {% empty %}
+            <article class="empty-card">
+                <h3>No projects yet</h3>
+                <p>Create your first workspace to define data, workflow, and a downloadable Streamlit prototype.</p>
+                <a class="primary-button" href="{% url 'project-create' %}">Create workspace</a>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

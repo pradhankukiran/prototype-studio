@@ -1,0 +1,327 @@
+{% extends 'builder/base.html' %}
+
+{% block title %}{{ project.name }} | Prototype Studio{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <ol class="breadcrumb-list">
+        <li><a href="{% url 'dashboard' %}">Library</a></li>
+        <li><span aria-current="page">{{ project.name }}</span></li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<section class="page-header page-header-split">
+    <div>
+        <p class="eyebrow">Workspace / {{ project.get_template_kind_display }}</p>
+        <h1>{{ project.name }}</h1>
+        <p class="lead-copy">{{ project.description|default:'Use this workspace to define entities, workflow, and generated screens.' }}</p>
+    </div>
+    <div class="page-header-actions">
+        <a class="ghost-button" href="{% url 'dashboard' %}">Back to library</a>
+        <a class="ghost-button" href="{% url 'project-preview' project.slug %}">Preview structure</a>
+        <form action="{% url 'project-generate' project.slug %}" method="post">
+            {% csrf_token %}
+            <button class="primary-button" type="submit" data-loading-text="Generating...">Generate Streamlit package</button>
+        </form>
+        <form action="{% url 'project-run' project.slug %}" method="post">
+            {% csrf_token %}
+            <button class="primary-button" type="submit" data-loading-text="Starting...">{% if prototype_runtime %}Restart prototype{% else %}Run prototype{% endif %}</button>
+        </form>
+        {% if prototype_runtime %}
+            <a class="ghost-button" href="{{ prototype_runtime.url }}" target="_blank" rel="noreferrer">Open prototype</a>
+            <form action="{% url 'project-stop' project.slug %}" method="post">
+                {% csrf_token %}
+                <button class="ghost-button" type="submit" data-loading-text="Stopping...">Stop prototype</button>
+            </form>
+        {% endif %}
+    </div>
+</section>
+
+<section class="workspace-grid">
+    <div class="panel-stack">
+        <article class="panel-card">
+            <div class="section-heading section-heading-inline">
+                <div>
+                    <h2>Entity model</h2>
+                    <p>Define core records first. These become tables and forms in the generated prototype.</p>
+                </div>
+                <span class="metric-inline">{{ project.entities_count }} entities</span>
+            </div>
+            <div class="row-list">
+                {% for entity in project.entities.all %}
+                    <div class="row-card">
+                        <div class="row-card-copy">
+                            <h3><a href="{{ entity.get_absolute_url }}">{{ entity.name }}</a></h3>
+                            <p>{{ entity.description|default:'No description yet.' }}</p>
+                        </div>
+                        <div class="row-card-meta">
+                            <span class="token">{{ entity.field_count }} fields</span>
+                            <a class="ghost-button" href="{{ entity.get_absolute_url }}">Manage fields</a>
+                            <a class="control-button" href="{{ project.get_absolute_url }}?edit_entity={{ entity.slug }}">Edit</a>
+                            <form class="control-form" method="post" action="{% url 'entity-move' project.slug entity.slug 'up' %}">
+                                {% csrf_token %}
+                                <button class="control-button" type="submit"{% if forloop.first %} disabled{% endif %} aria-label="Move {{ entity.name }} up">Up</button>
+                            </form>
+                            <form class="control-form" method="post" action="{% url 'entity-move' project.slug entity.slug 'down' %}">
+                                {% csrf_token %}
+                                <button class="control-button" type="submit"{% if forloop.last %} disabled{% endif %} aria-label="Move {{ entity.name }} down">Down</button>
+                            </form>
+                            <form class="control-form" method="post" action="{% url 'entity-delete' project.slug entity.slug %}" data-confirm="Delete entity {{ entity.name }}? This removes all its fields.">
+                                {% csrf_token %}
+                                <button class="control-button control-button-danger" type="submit" aria-label="Delete {{ entity.name }}">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="muted-copy">No entities yet. Add one to start shaping the data model.</p>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>{% if entity_edit_target %}Edit entity{% else %}Add entity{% endif %}</h2>
+                <p>
+                    {% if entity_edit_target %}
+                        Updating {{ entity_edit_target.name }}. Save changes or cancel to return to creation mode.
+                    {% else %}
+                        Use concise names and treat each entity as a durable business concept.
+                    {% endif %}
+                </p>
+            </div>
+            <form method="post" action="{{ entity_form_action }}" class="stack-form form-grid">
+                {% csrf_token %}
+                {% include 'builder/_form_fields.html' with form=entity_form %}
+                <div class="form-actions">
+                    <button class="primary-button" type="submit">{% if entity_edit_target %}Update entity{% else %}Save entity{% endif %}</button>
+                    {% if entity_edit_target %}
+                        <a class="ghost-button" href="{{ project.get_absolute_url }}">Cancel</a>
+                    {% endif %}
+                </div>
+            </form>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading section-heading-inline">
+                <div>
+                    <h2>Prototype screens</h2>
+                    <p>Keep the screen map lean so the exported Streamlit app stays easy to navigate.</p>
+                </div>
+                <span class="metric-inline">{{ project.screens_count }} screens</span>
+            </div>
+            <div class="row-list">
+                {% for screen in project.screens.all %}
+                    <div class="row-card">
+                        <div class="row-card-copy">
+                            <h3>{{ screen.title }}</h3>
+                            <p>{{ screen.get_screen_type_display }}{% if screen.entity %} for {{ screen.entity.name }}{% endif %}</p>
+                        </div>
+                        <div class="row-card-meta">
+                            <span class="token">{{ screen.slug }}</span>
+                            {% if screen.include_in_navigation %}
+                                <span class="token token-positive">In navigation</span>
+                            {% else %}
+                                <span class="token">Hidden</span>
+                            {% endif %}
+                            <a class="control-button" href="{{ project.get_absolute_url }}?edit_screen={{ screen.pk }}">Edit</a>
+                            <form class="control-form" method="post" action="{% url 'screen-move' project.slug screen.pk 'up' %}">
+                                {% csrf_token %}
+                                <button class="control-button" type="submit"{% if forloop.first %} disabled{% endif %} aria-label="Move {{ screen.title }} up">Up</button>
+                            </form>
+                            <form class="control-form" method="post" action="{% url 'screen-move' project.slug screen.pk 'down' %}">
+                                {% csrf_token %}
+                                <button class="control-button" type="submit"{% if forloop.last %} disabled{% endif %} aria-label="Move {{ screen.title }} down">Down</button>
+                            </form>
+                            <form class="control-form" method="post" action="{% url 'screen-delete' project.slug screen.pk %}" data-confirm="Delete screen {{ screen.title }}? This cannot be undone.">
+                                {% csrf_token %}
+                                <button class="control-button control-button-danger" type="submit" aria-label="Delete {{ screen.title }}">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="muted-copy">No screens yet.</p>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>{% if screen_edit_target %}Edit screen{% else %}Add screen{% endif %}</h2>
+                <p>Map only the views that need to exist in the first validation loop.</p>
+            </div>
+            <form method="post" action="{{ screen_form_action }}" class="stack-form">
+                {% csrf_token %}
+                {% include 'builder/_form_fields.html' with form=screen_form %}
+                <div class="form-actions">
+                    <button class="primary-button" type="submit">{% if screen_edit_target %}Update screen{% else %}Save screen{% endif %}</button>
+                    {% if screen_edit_target %}
+                        <a class="ghost-button" href="{{ project.get_absolute_url }}">Cancel</a>
+                    {% endif %}
+                </div>
+            </form>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>Generated artifacts</h2>
+                <p>The export includes `app.py`, the saved project spec, and a zip bundle.</p>
+            </div>
+            <div class="row-list">
+                {% for artifact in project.artifacts.all %}
+                    <div class="row-card">
+                        <div class="row-card-copy">
+                            <h3>{{ artifact.artifact_type|title }}</h3>
+                            <p>{{ artifact.relative_path }}</p>
+                        </div>
+                        <a class="ghost-button" href="{% url 'artifact-download' artifact.id %}">Download</a>
+                    </div>
+                {% empty %}
+                    <p class="muted-copy">Generate the project to create the first export bundle.</p>
+                {% endfor %}
+            </div>
+        </article>
+    </div>
+
+    <aside class="sidebar-stack">
+        <article class="panel-card">
+            <div class="section-heading section-heading-inline">
+                <div>
+                    <h2>Status</h2>
+                    <p>Readiness is based on structure, workflow, screens, and export availability.</p>
+                </div>
+                {% if project.status_label == 'Ready' %}
+                    <span class="status-badge status-badge-ready">{{ project.status_label }}</span>
+                {% elif project.status_label == 'In build' %}
+                    <span class="status-badge status-badge-build">{{ project.status_label }}</span>
+                {% else %}
+                    <span class="status-badge status-badge-draft">{{ project.status_label }}</span>
+                {% endif %}
+            </div>
+            <div class="progress-block">
+                <div class="progress-meta">
+                    <span>Workspace readiness</span>
+                    <strong>{{ project.completion_percent }}%</strong>
+                </div>
+                <div class="progress-track">
+                    <span style="width: {{ project.completion_percent }}%"></span>
+                </div>
+            </div>
+            <div class="check-list">
+                {% for label, is_done in project.readiness_checks %}
+                    <div class="check-row">
+                        <div class="check-copy">
+                            <span class="check-dot{% if is_done %} is-complete{% endif %}"></span>
+                            <span>{{ label }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="token-row">
+                <span class="token">{{ project.entities_count }} entities</span>
+                <span class="token">{{ project.workflow_states_count }} states</span>
+                <span class="token">{{ project.screens_count }} screens</span>
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>Live prototype</h2>
+                <p>Run the latest generated Streamlit app directly from this workspace.</p>
+            </div>
+            {% if prototype_runtime %}
+                <div class="runtime-stack">
+                    <div class="token-row">
+                        <span class="token token-positive">Running</span>
+                        <span class="token">Port {{ prototype_runtime.port }}</span>
+                    </div>
+                    <p class="table-subcopy">{{ prototype_runtime.url }}</p>
+                    <div class="form-actions">
+                        <a class="ghost-button" href="{{ prototype_runtime.url }}" target="_blank" rel="noreferrer">Open in browser</a>
+                        <form action="{% url 'project-run' project.slug %}" method="post">
+                            {% csrf_token %}
+                            <button class="primary-button" type="submit" data-loading-text="Starting...">Restart with latest export</button>
+                        </form>
+                        <form action="{% url 'project-stop' project.slug %}" method="post">
+                            {% csrf_token %}
+                            <button class="ghost-button" type="submit" data-loading-text="Stopping...">Stop</button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="runtime-stack">
+                    <div class="token-row">
+                        <span class="token">Not running</span>
+                    </div>
+                    <p class="muted-copy">Run prototype regenerates the latest package and starts a local Streamlit process.</p>
+                    <form action="{% url 'project-run' project.slug %}" method="post">
+                        {% csrf_token %}
+                        <button class="primary-button" type="submit" data-loading-text="Starting...">Run prototype</button>
+                    </form>
+                </div>
+            {% endif %}
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>Workflow</h2>
+                <p>These states appear in generated forms as lifecycle controls.</p>
+            </div>
+            <div class="workflow-list">
+                {% for state in project.workflow_states.all %}
+                    <div class="workflow-row">
+                        <div>
+                            <h3>{{ state.name }}</h3>
+                            <p>
+                                {% if state.is_initial %}Initial state{% elif state.is_terminal %}Terminal state{% else %}Active transition state{% endif %}
+                            </p>
+                        </div>
+                        <div class="token-row">
+                            {% if state.is_initial %}
+                                <span class="token token-positive">Start</span>
+                            {% endif %}
+                            {% if state.is_terminal %}
+                                <span class="token token-warn">End</span>
+                            {% endif %}
+                            <a class="control-button" href="{{ project.get_absolute_url }}?edit_state={{ state.pk }}">Edit</a>
+                            <form class="control-form" method="post" action="{% url 'state-move' project.slug state.pk 'up' %}">
+                                {% csrf_token %}
+                                <button class="control-button" type="submit"{% if forloop.first %} disabled{% endif %} aria-label="Move {{ state.name }} up">Up</button>
+                            </form>
+                            <form class="control-form" method="post" action="{% url 'state-move' project.slug state.pk 'down' %}">
+                                {% csrf_token %}
+                                <button class="control-button" type="submit"{% if forloop.last %} disabled{% endif %} aria-label="Move {{ state.name }} down">Down</button>
+                            </form>
+                            <form class="control-form" method="post" action="{% url 'state-delete' project.slug state.pk %}" data-confirm="Delete workflow state {{ state.name }}? This cannot be undone.">
+                                {% csrf_token %}
+                                <button class="control-button control-button-danger" type="submit" aria-label="Delete {{ state.name }}">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="muted-copy">No workflow states yet.</p>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="section-heading">
+                <h2>{% if state_edit_target %}Edit workflow state{% else %}Add workflow state{% endif %}</h2>
+                <p>Keep these few and explicit. Too many states make the prototype harder to review.</p>
+            </div>
+            <form method="post" action="{{ state_form_action }}" class="stack-form">
+                {% csrf_token %}
+                {% include 'builder/_form_fields.html' with form=state_form %}
+                <div class="form-actions">
+                    <button class="primary-button" type="submit">{% if state_edit_target %}Update state{% else %}Save state{% endif %}</button>
+                    {% if state_edit_target %}
+                        <a class="ghost-button" href="{{ project.get_absolute_url }}">Cancel</a>
+                    {% endif %}
+                </div>
+            </form>
+        </article>
+
+    </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Prototype Studio{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'builder/styles.css' %}">
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="page-shell">
+        <header class="site-header">
+            <a class="brand-lockup" href="{% url 'dashboard' %}">
+                <span class="brand-mark">PS</span>
+                <span class="brand-copy">
+                    <strong>Prototype Studio</strong>
+                    <small>Operational workspace for spec-first Python apps</small>
+                </span>
+            </a>
+            {% if request.user.is_authenticated %}
+                <div class="header-actions">
+                    <nav class="site-nav">
+                        <a class="nav-link{% if request.resolver_match.url_name == 'dashboard' %} is-active{% endif %}" href="{% url 'dashboard' %}">
+                            Project library
+                        </a>
+                        <a class="nav-link{% if request.resolver_match.url_name == 'project-create' %} is-active{% endif %}" href="{% url 'project-create' %}">
+                            New workspace
+                        </a>
+                    </nav>
+                    <span class="account-chip">{{ request.user.username }}</span>
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="ghost-button" type="submit">Log out</button>
+                    </form>
+                </div>
+            {% endif %}
+        </header>
+
+        {% if messages %}
+            <section class="message-stack" data-autodismiss role="status" aria-live="polite">
+                {% for message in messages %}
+                    <div class="message message-{{ message.tags|default:'info' }}">{{ message }}</div>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        {% block breadcrumb %}{% endblock %}
+
+        <main id="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <script src="{% static 'builder/ui.js' %}" defer></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
