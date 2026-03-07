@@ -336,39 +336,39 @@ def _variant_warm_corporate(theme: dict) -> str:
 
 
 def _variant_cool_professional(theme: dict) -> str:
-    return f"""
-            .main .block-container {{
+    return """
+            .main .block-container {
                 max-width: 1400px;
-            }}
+            }
             [data-testid="stMetric"],
             .entity-card,
             .glance-card,
             .detail-card,
             .readout-card,
             .info-panel,
-            .empty-state-card {{
+            .empty-state-card {
                 border-radius: 14px;
                 border: 1px solid rgba(41, 95, 131, 0.12);
                 box-shadow: 0 8px 24px rgba(17, 24, 39, 0.05);
-            }}
-            .hero-header {{
+            }
+            .hero-header {
                 border-radius: 18px;
-            }}
+            }
             .stTextInput > div > div > input,
             .stTextArea textarea,
             .stDateInput input,
             .stNumberInput input,
             .stSelectbox > div > div,
-            .stMultiSelect > div > div {{
+            .stMultiSelect > div > div {
                 border-radius: 12px !important;
-            }}
+            }
             .stDataFrame,
-            [data-testid="stDataFrame"] {{
+            [data-testid="stDataFrame"] {
                 border-radius: 14px;
-            }}
-            .studio-brand {{
+            }
+            .studio-brand {
                 border-radius: 14px;
-            }}"""
+            }"""
 
 
 def _variant_formal_gold(theme: dict) -> str:
